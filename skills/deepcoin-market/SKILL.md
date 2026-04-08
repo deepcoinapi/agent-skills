@@ -66,7 +66,7 @@ GET /deepcoin/market/instruments
 
 | Param | Required | Values | Description |
 |-------|----------|--------|-------------|
-| instType | Yes | `SPOT`, `SWAP` | Instrument type |
+| instType | Yes | `SPOT`, `SWAP` | Instrument type: `SPOT` = spot (现货), `SWAP` = perpetual contract (合约) |
 | uly | No | e.g. `BTC-USDT` | Underlying |
 | instId | No | e.g. `BTC-USDT-SWAP` | Specific instrument |
 
@@ -80,7 +80,7 @@ GET /deepcoin/market/tickers
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | Yes | `SPOT`, `SWAP` |
+| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | uly | No | e.g. `BTC-USDT` |
 
 Key response fields: `instId`, `last`, `lastSz`, `askPx`, `askSz`, `bidPx`, `bidSz`, `open24h`, `high24h`, `low24h`, `vol24h`, `volCcy24h`, `ts`.
@@ -195,6 +195,8 @@ GET /deepcoin/trade/fund-rate/history
     Params: instId, page, size (max 100)
 ```
 
+`instType` convention throughout this skill: `SPOT` means spot (现货), `SWAP` means perpetual contract (合约).
+
 ---
 
 ## Public WebSocket
@@ -271,15 +273,20 @@ K-line periods: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `12h`, `1d`, `1w`, `1o`, `
 ### Get BTC-USDT spot ticker (cURL)
 
 ```bash
-curl "https://api.deepcoin.com/deepcoin/market/tickers?instType=SPOT&uly=BTC-USDT"
+BASE_URL="${DC_API_BASE_URL:-https://api.deepcoin.com}"
+
+curl "$BASE_URL/deepcoin/market/tickers?instType=SPOT&uly=BTC-USDT"
 ```
 
 ### Get 1-hour K-lines for BTC-USDT-SWAP (Python)
 
 ```python
+import os
 import requests
 
-resp = requests.get("https://api.deepcoin.com/deepcoin/market/candles", params={
+base_url = os.environ.get("DC_API_BASE_URL", "https://api.deepcoin.com")
+
+resp = requests.get(f"{base_url}/deepcoin/market/candles", params={
     "instId": "BTC-USDT-SWAP",
     "bar": "1H",
     "limit": 100

@@ -196,7 +196,7 @@ GET /deepcoin/trade/orders-history
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | Yes | `SPOT`, `SWAP` |
+| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | instId | No | Filter |
 | ordType | No | Filter |
 | state | No | `canceled`, `filled` |
@@ -219,7 +219,7 @@ GET /deepcoin/trade/fills
 
 | Param | Required |
 |-------|----------|
-| instType | Yes |
+| instType | Yes | `SPOT` or `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | instId | No |
 | ordId | No |
 | begin / end | No |
@@ -394,13 +394,14 @@ GET /deepcoin/trade/trace-order-list
 ### Place a limit buy order on BTC-USDT-SWAP (Python)
 
 ```python
+import os
 import requests, hmac, hashlib, base64, json
 from datetime import datetime, timezone
 
 API_KEY = os.environ["DC_API_KEY"]
 SECRET_KEY = os.environ["DC_SECRET_KEY"]
 PASSPHRASE = os.environ["DC_PASSPHRASE"]
-BASE = "https://api.deepcoin.com"
+BASE = os.environ.get("DC_API_BASE_URL", "https://api.deepcoin.com")
 
 timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 method = "POST"
@@ -433,7 +434,9 @@ print(resp.json())
 ### Cancel an order (cURL)
 
 ```bash
-curl -X POST "https://api.deepcoin.com/deepcoin/trade/cancel-order" \
+BASE_URL="${DC_API_BASE_URL:-https://api.deepcoin.com}"
+
+curl -X POST "$BASE_URL/deepcoin/trade/cancel-order" \
   -H "Content-Type: application/json" \
   -H "DC-ACCESS-KEY: $DC_API_KEY" \
   -H "DC-ACCESS-SIGN: $SIGNATURE" \

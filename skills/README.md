@@ -27,3 +27,10 @@ metadata:
 ```
 
 Followed by: endpoint index (with READ/WRITE classification), operation flow, endpoint reference, safety rules, decision workflows, edge cases, scope & boundaries, and examples.
+
+## API Base URL Convention
+
+All Deepcoin skills should support a user-provided `base_url`.
+
+- If `base_url` is provided, use it for request construction.
+- If `base_url` is omitted, default to `https://api.deepcoin.com`.

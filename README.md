@@ -40,9 +40,10 @@ Each skill defines clear boundaries in its `description` field. An AI agent shou
 
 ## API Base URL
 
-```
-https://api.deepcoin.com
-```
+Users can pass a custom API Base URL.
+
+- If `base_url` is provided, use that value.
+- If `base_url` is not provided, default to `https://api.deepcoin.com`.
 
 ## Authentication
 

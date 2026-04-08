@@ -112,7 +112,7 @@ GET /deepcoin/account/balances
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | No | `SPOT`, `SWAP` |
+| instType | No | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | ccy | No | e.g. `USDT` |
 
 Response: `ccy`, `bal`, `frozenBal`, `availBal`, `unrealizedProfit`, `equity`.
@@ -125,7 +125,7 @@ GET /deepcoin/account/bills
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | Yes | `SPOT`, `SWAP` |
+| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | ccy | No | e.g. `USDT` |
 | type | No | `2` (transfer), `3` (trade), `4` (fee rebate), `5` (funding) |
 | after / before | No | Pagination |
@@ -141,7 +141,7 @@ GET /deepcoin/account/positions
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | No | `SWAP`, `SPOT` |
+| instType | No | `SWAP`, `SPOT` (`SWAP` = 合约, `SPOT` = 现货) |
 | instId | No | e.g. `BTC-USDT-SWAP` |
 
 Response: `instId`, `posId`, `posSide`, `pos`, `avgPx`, `lever`, `liqPx`, `useMargin`, `unrealizedProfit`, `lastPx`, `tpTriggerPx`, `slTriggerPx`, `mrgPosition` (merge/split), `mgnMode` (cross/isolated), `ccy`, `uTime`, `cTime`.
