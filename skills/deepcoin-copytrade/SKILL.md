@@ -71,10 +71,10 @@ POST /deepcoin/copytrading/leader-settings
 
 | Param | Required | Values | Description |
 |-------|----------|--------|-------------|
-| status | Yes | `0` (disable), `1` (enable) | Leader mode on/off |
+| status | No | `0` (disable), `1` (enable) | Official docs mark this required, but observed behavior allows omission and still returns `code=0` |
 | homeMode | No | `1`, `3` | Display mode |
-| isClosedCopyCode | No | | Close copy code |
-| copyCode | No | | Specific copy code |
+| isClosedCopyCode | No | `true`, `false` | Default `true`; `false` means set a copy code |
+| copyCode | Conditional | | Required when `isClosedCopyCode=false` |
 
 > **WRITE** — confirm with user. Enabling leader mode makes positions visible to followers.
 
@@ -94,7 +94,7 @@ POST /deepcoin/copytrading/set-contracts
 
 | Param | Required | Description |
 |-------|----------|-------------|
-| contracts | Yes | Array of contract symbols to enable for copy trading |
+| contracts | Yes | Array of compact contract symbols such as `BTCUSDT`; do not use `BTC-USDT-SWAP` |
 
 > **WRITE** — confirm the contract list with user.
 
@@ -106,7 +106,7 @@ GET /deepcoin/copytrading/follower-rank
 
 | Param | Required | Values |
 |-------|----------|--------|
-| status | Yes | `1` (current followers), `2` (historical) |
+| status | No | `1` (current followers, default), `2` (historical) |
 
 Response: `followerNum`, `maxFollowerNum`, `list` (each: `userId`, `nickName`, `totalProfit`).
 
@@ -121,7 +121,7 @@ GET /deepcoin/copytrading/leader-position
 | pageNum | No | Page number |
 | pageSize | No | Items per page |
 
-Response: `tradeUnitID`, `accountId`, `instrumentId`, `leverage`, `position`, `openPrice`, `isMergeMode`, `isCrossMargin`, `positionDirection`, `forceClosePrice`.
+Response: `tradeUnitID`, `accountId`, `instrumentId`, `leverage`, `position`, `availablePosition`, `openPrice`, `useMargin`, `updateTime`, `isMergeMode`, `isCrossMargin`, `positionDirection`, `forceClosePrice`, `positionId`.
 
 ### 6. Get Position Type
 

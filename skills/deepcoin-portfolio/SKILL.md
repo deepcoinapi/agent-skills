@@ -112,10 +112,12 @@ GET /deepcoin/account/balances
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | No | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
+| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
 | ccy | No | e.g. `USDT` |
 
 Response: `ccy`, `bal`, `frozenBal`, `availBal`, `unrealizedProfit`, `equity`.
+
+Observed behavior: omitting `instType` may return an empty list without an explicit error.
 
 ### 2. Account Bills
 
@@ -141,7 +143,7 @@ GET /deepcoin/account/positions
 
 | Param | Required | Values |
 |-------|----------|--------|
-| instType | No | `SWAP`, `SPOT` (`SWAP` = 合约, `SPOT` = 现货) |
+| instType | Yes | `SWAP`, `SPOT` (`SWAP` = 合约, `SPOT` = 现货) |
 | instId | No | e.g. `BTC-USDT-SWAP` |
 
 Response: `instId`, `posId`, `posSide`, `pos`, `avgPx`, `lever`, `liqPx`, `useMargin`, `unrealizedProfit`, `lastPx`, `tpTriggerPx`, `slTriggerPx`, `mrgPosition` (merge/split), `mgnMode` (cross/isolated), `ccy`, `uTime`, `cTime`.
@@ -157,7 +159,7 @@ POST /deepcoin/account/set-leverage
 | instId | Yes | e.g. `BTC-USDT-SWAP` |
 | lever | Yes | e.g. `10` |
 | mgnMode | Yes | `cross`, `isolated` |
-| mrgPosition | No | `merge`, `split` |
+| mrgPosition | Yes | `merge`, `split` |
 
 > **WRITE operation** — confirm with user before executing.
 
@@ -205,7 +207,10 @@ GET /deepcoin/sub-account/sub-account-transfer-record
 | coin | No | e.g. `USDT` |
 | fromId / toId | No | Account type filter |
 | relationType | No | `1` (main→sub), `2` (sub→main), `3` (sub→sub) |
-| page / size | No | Pagination (max 100) |
+| page | Yes | Pagination page number (minimum `1`) |
+| size | Yes | Pagination size (minimum `1`, maximum `100`) |
+
+Response format note: this endpoint uses `retCode`, `retMsg`, `retData` rather than the more common `code`, `msg`, `data`.
 
 ### 9. Sub-Account Total Balance
 
@@ -213,7 +218,7 @@ GET /deepcoin/sub-account/sub-account-transfer-record
 GET /deepcoin/sub-account/sub-account-balance-total
 ```
 
-No parameters. Returns: `balance`.
+Official docs include this endpoint, but observed behavior is `404 Not Found`. Treat it as unavailable unless the upstream service is restored.
 
 ### 10–11. Deposit / Withdrawal Lists
 
@@ -254,7 +259,7 @@ GET /deepcoin/asset/recharge-chain-list
 | Param | Required |
 |-------|----------|
 | currency_id | Yes |
-| lang | No |
+| lang | Yes |
 
 Response: `chain`, `state`, `address`, `hasMemo`, `estimatedTime`.
 
@@ -262,7 +267,7 @@ Response: `chain`, `state`, `address`, `hasMemo`, `estimatedTime`.
 
 ```
 GET  /deepcoin/internal-transfer/support
-    → Returns: array of [coin, min, max]
+    → Returns nested data under `data.data[]`; each item contains coin/min/max style fields
 
 POST /deepcoin/internal-transfer
     Params: amount, coin, receiverAccount, accountType, receiverUID
@@ -273,17 +278,27 @@ GET  /deepcoin/internal-transfer/history-order
             receiverUID, orderId, startTime, endTime, page, size
 ```
 
+`internal-transfer` request params:
+
+| Param | Required | Values / Description |
+|-------|----------|----------------------|
+| amount | Yes | Transfer amount |
+| coin | Yes | Coin symbol, e.g. `USDT` |
+| receiverAccount | Yes | Recipient email or phone value |
+| accountType | Yes | `email`, `phone` |
+| receiverUID | Yes | Recipient UID |
+
 ### 17–19. Rebate / Affiliate
 
 ```
 GET /deepcoin/agents/users/rebates
-    Params: uid, type (0=all, 1=spot, 2=swap), startTime, endTime
+    Params: uid, type (0=normal rebate, 1=abnormal frozen, 2=total), startTime, endTime
 
 GET /deepcoin/agents/users
     Params: uid, startTime, endTime
 
 GET /deepcoin/agents/users/rebate-list
-    Params: uid, type, startTime, endTime, pageNum, pageSize
+    Params: uid, type (0=normal rebate, 1=abnormal frozen, 2=total), startTime, endTime, pageNum, pageSize
 ```
 
 ### 20–22. Trade Statistics
@@ -294,7 +309,16 @@ GET /deepcoin/apiUserTradeStats/total
 GET /deepcoin/apiUserTradeStats/instrument
 ```
 
-Common params: `appid`, `uid`, `startTime`, `endTime`, `instrumentIds`.
+Common params:
+- `appid` (required): AppID such as `FMZ`, `CCXT`, `Hummingbot`
+- `uid` (optional)
+- `startTime` (required, seconds)
+- `endTime` (required, seconds)
+- `instrumentIds`:
+  - optional for `/daily` and `/total`
+  - required for `/instrument`
+
+Access note: these endpoints may return `403` with code `51028` until Deepcoin support enables the required whitelist permission.
 
 ---
 

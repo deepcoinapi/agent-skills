@@ -64,17 +64,29 @@ The DSL is a JSON object with a specific schema for defining indicator-based str
 ```json
 {
   "version": "1.0",
-  "indicators": [...],
+  "indicators": [
+    {
+      "name": "boll",
+      "type": "BOLL",
+      "scope": "entry",
+      "params": { "period": 20, "std": 2, "interval": "1m" },
+      "condition": { "ref": "boll.lower", "op": "<" }
+    }
+  ],
   "then": {
-    "entry": {...},
-    "exit": {...}
+    "entry": {
+      "on_true": { "action": "open", "side": "long", "volume": 100 }
+    },
+    "exit": {
+      "on_true": { "action": "close", "side": "long", "volume": 100 }
+    }
   },
   "risk": {
-    "stop_loss": {...},
-    "take_profit": {...}
+    "stop_loss": { "value": 0.1 },
+    "take_profit": { "value": 0.2 }
   },
   "execution": {
-    "order_type": "market"
+    "fee_bps": 5
   }
 }
 ```
@@ -83,22 +95,22 @@ The DSL is a JSON object with a specific schema for defining indicator-based str
 
 | Indicator | Params | Description |
 |-----------|--------|-------------|
-| `BOLL` | `period`, `std_dev` | Bollinger Bands (upper, middle, lower) |
-| `MA` | `period` | Simple Moving Average |
-| `EMA` | `period` | Exponential Moving Average |
-| `KDJ` | `period` | KDJ Stochastic |
-| `RSI` | `period` | Relative Strength Index |
-| `WR` | `period` | Williams %R |
+| `BOLL` | `period`, `std`, `interval` | Bollinger Bands (upper, middle, lower) |
+| `MA` | `period`, `interval` | Simple Moving Average |
+| `EMA` | `period`, `interval` | Exponential Moving Average |
+| `KDJ` | `n`, `k_smoothing`, `d_smoothing`, `interval` | KDJ Stochastic |
+| `RSI` | `period`, `interval` | Relative Strength Index |
+| `WR` | `period`, `interval` | Williams %R |
 
 ### Indicator Definition Example
 
 ```json
 {
-  "name": "BOLL",
-  "params": { "period": 20, "std_dev": 2 },
-  "conditions": [
-    { "field": "lower", "op": ">=", "ref": "close" }
-  ]
+  "name": "boll",
+  "type": "BOLL",
+  "scope": "entry",
+  "params": { "period": 20, "std": 2, "interval": "1m" },
+  "condition": { "ref": "boll.lower", "op": "<" }
 }
 ```
 
@@ -106,19 +118,14 @@ The DSL is a JSON object with a specific schema for defining indicator-based str
 
 | Operator | Description |
 |----------|-------------|
-| `>=` | Greater than or equal |
-| `<=` | Less than or equal |
 | `>` | Greater than |
 | `<` | Less than |
-| `==` | Equal |
-| `cross_above` | Crosses above |
-| `cross_below` | Crosses below |
 
 ### Reference Fields
 
-- `close` — current close price
-- `open`, `high`, `low` — OHLC prices
-- Other indicator output fields (e.g. `upper`, `middle`, `lower` for BOLL; `k`, `d`, `j` for KDJ)
+- `boll.lower`, `boll.upper`, `ma5.value` style indicator fields
+- `right` can be a fixed threshold for KDJ / RSI / WR
+- `diff_price` can express distance from current market price
 
 ### Entry / Exit Definition
 
@@ -126,28 +133,30 @@ The DSL is a JSON object with a specific schema for defining indicator-based str
 {
   "then": {
     "entry": {
-      "side": "buy",
-      "posSide": "long",
-      "logic": "AND"
+      "on_true": {
+        "action": "open",
+        "side": "long",
+        "volume": 100
+      }
     },
     "exit": {
-      "side": "sell",
-      "posSide": "long",
-      "logic": "AND"
+      "on_true": {
+        "action": "close",
+        "side": "long",
+        "volume": 100
+      }
     }
   }
 }
 ```
-
-- `logic`: `AND` (all indicator conditions must be true) or `OR` (any condition triggers)
 
 ### Risk Management
 
 ```json
 {
   "risk": {
-    "stop_loss": { "percent": 2.0 },
-    "take_profit": { "percent": 5.0 }
+    "stop_loss": { "value": 0.1 },
+    "take_profit": { "value": 0.2 }
   }
 }
 ```
@@ -170,28 +179,29 @@ Request body:
     "version": "1.0",
     "indicators": [
       {
-        "name": "BOLL",
-        "params": { "period": 20, "std_dev": 2 },
-        "conditions": [
-          { "field": "lower", "op": ">=", "ref": "close" }
-        ]
+        "name": "boll",
+        "type": "BOLL",
+        "scope": "entry",
+        "params": { "period": 20, "std": 2, "interval": "1m" },
+        "condition": { "ref": "boll.lower", "op": "<" }
       }
     ],
     "then": {
-      "entry": { "side": "buy", "posSide": "long", "logic": "AND" },
-      "exit": { "side": "sell", "posSide": "long", "logic": "AND" }
+      "entry": { "on_true": { "action": "open", "side": "long", "volume": 100 } },
+      "exit": { "on_true": { "action": "close", "side": "long", "volume": 100 } }
     },
     "risk": {
-      "stop_loss": { "percent": 2.0 },
-      "take_profit": { "percent": 5.0 }
+      "stop_loss": { "value": 0.1 },
+      "take_profit": { "value": 0.2 }
     },
-    "execution": { "order_type": "market" }
+    "execution": { "fee_bps": 5 }
   },
   "data_source": {
     "symbol": "BTC-USDT-SWAP",
-    "from_ts": "2024-01-01T00:00:00Z",
-    "to_ts": "2024-06-01T00:00:00Z"
-  }
+    "from_ts": 1772054911,
+    "to_ts": 1772090911
+  },
+  "include_trades": true
 }
 ```
 
@@ -209,6 +219,8 @@ Response:
 }
 ```
 
+Observed limitation: testing indicates a required order-size field is still missing from the published backtest schema. Attempts without that extra size field fail, and the correct accepted placement within the payload is not yet documented in the API docs.
+
 ### 2. DSL Trigger Order (Live Deployment)
 
 ```
@@ -219,10 +231,12 @@ POST /deepcoin/trade/dsl-trigger-order
 |-------|----------|-------------|
 | trade_info.symbol | Yes | e.g. `BTC-USDT-SWAP` |
 | trade_info.tradeMode | Yes | `isolated`, `cross` |
-| trade_info.mrgPosition | Yes | `merge`, `split` |
-| dsl_json | Yes | Full DSL JSON (same structure as backtest) |
+| trade_info.mrgPosition | No | `merge`, `split` (default `merge`) |
+| dsl_json | Yes | Full DSL JSON using `indicators`, `condition`, `then.entry/exit.on_true`, and optional `risk` |
 
 > **WRITE operation** — this deploys a live automated strategy. Always confirm with user.
+
+Observed limitation: live deployment appears to have the same undocumented size-field gap as backtesting. The public docs do not currently describe a working payload shape that satisfies this extra requirement.
 
 ---
 
@@ -263,42 +277,41 @@ POST /deepcoin/trade/dsl-trigger-order
   "version": "1.0",
   "indicators": [
     {
-      "name": "BOLL",
-      "params": { "period": 20, "std_dev": 2 },
-      "conditions": [
-        { "field": "lower", "op": ">=", "ref": "close" }
-      ]
+      "name": "boll",
+      "type": "BOLL",
+      "scope": "entry",
+      "params": { "period": 20, "std": 2, "interval": "1m" },
+      "condition": { "ref": "boll.lower", "op": "<" }
     },
     {
-      "name": "RSI",
-      "params": { "period": 14 },
-      "conditions": [
-        { "field": "rsi", "op": "<=", "ref": 30 }
-      ]
+      "name": "rsi",
+      "type": "RSI",
+      "scope": "entry",
+      "params": { "period": 14, "interval": "1m" },
+      "condition": { "ref": "rsi.value", "op": "<", "right": 30 }
     }
   ],
   "then": {
-    "entry": { "side": "buy", "posSide": "long", "logic": "AND" },
-    "exit": { "side": "sell", "posSide": "long", "logic": "AND" }
+    "entry": { "on_true": { "action": "open", "side": "long", "volume": 100 } }
   },
   "risk": {
-    "stop_loss": { "percent": 2.0 },
-    "take_profit": { "percent": 5.0 }
+    "stop_loss": { "value": 0.02 },
+    "take_profit": { "value": 0.05 }
   },
-  "execution": { "order_type": "market" }
+  "execution": { "fee_bps": 5 }
 }
 ```
 
-**Logic**: Enter long when price touches the lower Bollinger Band AND RSI is below 30 (oversold). Exit with 5% take profit or 2% stop loss.
+**Logic**: Enter long when the Bollinger lower-band condition and RSI<30 are both satisfied. Protect the position with 5% take profit and 2% stop loss.
 
 ---
 
 ## Edge Cases & Gotchas
 
-1. **DSL version** must be `"1.0"` — include it in every DSL object.
-2. **Backtest `data_source`** uses ISO 8601 timestamps for `from_ts` and `to_ts`.
-3. **Indicator `conditions` reference** can be a string field name (e.g. `"close"`) or a numeric literal (e.g. `30` for RSI threshold).
-4. **`execution.order_type`** should typically be `"market"` for strategy orders.
+1. **DSL version** should be `"1.0"` when included.
+2. **Backtest `data_source`** uses Unix timestamps in seconds for `from_ts` and `to_ts`.
+3. **Indicator blocks** use `type`, `params`, `condition`, and `scope`; they do not use the older `conditions[]` shape.
+4. **Live strategy orders** support `on_true` action branches; keep payloads aligned with the documented DSL shape.
 5. **Trade mode** in `trade_info` must match the user's account configuration (cross vs isolated, merge vs split).
 
 ---

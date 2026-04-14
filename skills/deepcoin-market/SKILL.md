@@ -94,7 +94,7 @@ GET /deepcoin/market/books
 | Param | Required | Values |
 |-------|----------|--------|
 | instId | Yes | e.g. `BTC-USDT-SWAP` |
-| sz | No | Max 400 levels |
+| sz | Yes | Max 400 levels |
 
 Response: `asks` and `bids` arrays, each element is `[price, size]`.
 
@@ -107,7 +107,7 @@ GET /deepcoin/market/trades
 | Param | Required | Values |
 |-------|----------|--------|
 | instId | Yes | e.g. `BTC-USDT` |
-| productGroup | No | `Spot`, `Swap`, `SwapU` |
+| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
 | limit | No | Max 500, default 100 |
 
 ### 5. K-line / Candlesticks
@@ -146,10 +146,11 @@ GET /deepcoin/market/handicap-trade
 |-------|----------|-------------|
 | symbol | Yes | e.g. `BTC-USDT-SWAP` |
 | stime | Yes | Start time in **seconds** |
-| etime | Yes | End time in **seconds** |
-| limit | No | 1–2000 |
+| etime | No | End time in **seconds** |
+| limit | Yes | 1–2000 |
 
 > Note: these endpoints use `symbol` (not `instId`) and **seconds** (not milliseconds).
+> Observed behavior: `etime` can be omitted and the request may still succeed, even though older skill text treated it as required.
 
 ### 11. Step Margin
 
@@ -172,7 +173,7 @@ GET /deepcoin/market/book-spread
 | Param | Required | Description |
 |-------|----------|-------------|
 | instId | Yes | e.g. `BTC-USDT-SWAP` |
-| value | No | Order value |
+| value | Yes | Order value |
 | vType | No | `0` = quoteCcy, `1` = baseCcy |
 
 ### 13–14. System Info
@@ -186,14 +187,24 @@ GET /deepcoin/market/ping    → connectivity check
 
 ```
 GET /deepcoin/trade/fund-rate/current-funding-rate
-    Params: instType (SwapU/Swap), instId
+    Params:
+    - instType (required): `SwapU`, `Swap`
+    - instId (optional): omit to query all instruments
 
 GET /deepcoin/trade/funding-rate
-    Params: instType (SwapU/Swap), instId
+    Params:
+    - instType (required): `SwapU`, `Swap`
+    - instId (optional): omit to query all instruments
+      Format note: observed requests use compact symbols such as `BTCUSDT`, not `BTC-USDT-SWAP`
 
 GET /deepcoin/trade/fund-rate/history
-    Params: instId, page, size (max 100)
+    Params:
+    - instId (required)
+    - page (optional, default `1`)
+    - size (optional, max `100`, default `20`)
 ```
+
+Funding history response note: rows are nested under `data.rows`, not returned as a flat top-level `data[]`.
 
 `instType` convention throughout this skill: `SPOT` means spot (现货), `SWAP` means perpetual contract (合约).
 

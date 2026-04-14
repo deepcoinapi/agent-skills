@@ -94,8 +94,8 @@ POST /deepcoin/trade/order
 | ordType | Yes | `market`, `limit`, `post_only`, `ioc` | Order type |
 | sz | Yes | e.g. `1` | Size (contracts for swap, base currency for spot) |
 | px | Conditional | e.g. `30000` | Price (required for limit orders) |
-| posSide | Conditional | `long`, `short` | Required for SWAP in split position mode |
-| mrgPosition | No | `merge`, `split` | Position mode |
+| posSide | Conditional | `long`, `short` | Required for SWAP; observed behavior also requires it in merge mode |
+| mrgPosition | Conditional | `merge`, `split` | Required for SWAP |
 | tpTriggerPx | No | | Take-profit trigger price |
 | slTriggerPx | No | | Stop-loss trigger price |
 | clOrdId | No | | Client order ID |
@@ -109,6 +109,7 @@ POST /deepcoin/trade/batch-orders
 ```
 
 Body: `orders` array (max **5** items), each with the same fields as place order.
+For SWAP orders, observed behavior also requires `posSide` even when `mrgPosition=merge`.
 
 ### 3. Cancel Order
 
@@ -137,7 +138,7 @@ POST /deepcoin/trade/swap/cancel-all
 
 | Param | Required | Values |
 |-------|----------|--------|
-| InstrumentID | Yes | e.g. `BTC-USDT-SWAP` |
+| InstrumentID | No | e.g. `BTCUSDT`; omit to cancel across the selected product group |
 | ProductGroup | Yes | `Swap`, `SwapU` |
 | IsCrossMargin | Yes | `0` (isolated), `1` (cross) |
 | IsMergeMode | Yes | `0` (split), `1` (merge) |
@@ -173,7 +174,10 @@ GET /deepcoin/trade/orderByID          → active or recent order
 GET /deepcoin/trade/finishOrderByID    → historical / completed order
 ```
 
-Params: `instId`, `ordId`.
+| Param | Required | Description |
+|-------|----------|-------------|
+| instId | Yes | Instrument ID |
+| ordId | Yes | Order ID |
 
 ### 10. Pending Orders
 
@@ -184,7 +188,7 @@ GET /deepcoin/trade/v2/orders-pending
 | Param | Required | Description |
 |-------|----------|-------------|
 | instId | No | Filter by instrument |
-| index | No | Pagination index |
+| index | Yes | Pagination index; minimum value `1` |
 | limit | No | Max 100, default 30 |
 | ordId | No | Specific order |
 
@@ -255,11 +259,29 @@ POST /deepcoin/trade/trigger-order
 
 ```
 POST /deepcoin/trade/cancel-trigger-order
-    Params: instId, ordId, clOrdId
+```
+
+`cancel-trigger-order` params:
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| instId | Yes | Instrument ID |
+| ordId | Yes | Trigger order ID |
+| clOrdId | No | Client order ID; cannot replace `ordId`, which remains required |
+
+```
 
 POST /deepcoin/trade/swap/cancel-trigger-all
-    Params: ProductGroup, InstrumentID, IsCrossMargin (-1/0/1), IsMergeMode (-1/0/1)
 ```
+
+`cancel-trigger-all` params:
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| ProductGroup | Yes | `Swap`, `SwapU` |
+| InstrumentID | No | Instrument filter; omit to cancel all |
+| IsCrossMargin | No | `1` = cross, `0` = isolated, `-1` = no filter |
+| IsMergeMode | No | `1` = merge, `0` = split, `-1` = no filter |
 
 ### 17–18. Query Trigger Orders
 
@@ -268,7 +290,13 @@ GET /deepcoin/trade/trigger-orders-pending
 GET /deepcoin/trade/trigger-orders-history
 ```
 
-Params: `instType`, `instId`, `orderType`, `limit` (max 100).
+| Param | Pending Required | History Required | Description |
+|-------|------------------|------------------|-------------|
+| instType | Yes | Yes | `SPOT`, `SWAP` |
+| instId | Yes | Yes | Instrument ID |
+| orderType | No | No | `limit`, `market` |
+| limit | No | No | Max `100`, default `100` |
+| ordId | No | No | Order ID filter; supported on history endpoint |
 
 ### 19–21. Position TP/SL
 
@@ -278,7 +306,32 @@ POST /deepcoin/trade/modify-position-sltp    → modify existing (requires ordId
 POST /deepcoin/trade/cancel-position-sltp    → cancel (requires ordId)
 ```
 
-Common params: `instType`, `instId`, `posSide`, `mrgPosition`, `tdMode`, `posId`, `tpTriggerPx`, `tpTriggerPxType`, `tpOrdPx`, `slTriggerPx`, `slTriggerPxType`, `slOrdPx`, `sz`.
+`set-position-sltp` params:
+
+| Param | Required | Values / Description |
+|-------|----------|----------------------|
+| instType | Yes | `SPOT` or `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
+| instId | Yes | e.g. `BTC-USDT-SWAP` |
+| posSide | No | `long`, `short` |
+| mrgPosition | No | `merge`, `split` |
+| tdMode | No | `cash`, `cross`, `isolated` |
+| posId | No | Position ID |
+| tpTriggerPx | No | Take-profit trigger price |
+| tpTriggerPxType | No | `last`, `index`, `mark` |
+| tpOrdPx | No | Take-profit order price |
+| slTriggerPx | No | Stop-loss trigger price |
+| slTriggerPxType | No | `last`, `index`, `mark` |
+| slOrdPx | No | Stop-loss order price |
+| sz | No | Position size |
+
+Notes:
+- At least one of `tpTriggerPx` or `slTriggerPx` must be provided.
+- When `mrgPosition=split`, `posId` is required.
+- For `SPOT`, `posSide`, `mrgPosition`, `tdMode`, and `posId` do not apply.
+
+`modify-position-sltp` params follow the same core fields, with `instType`, `instId`, and `ordId` all required.
+
+`cancel-position-sltp` params require `instType`, `instId`, and `ordId`.
 
 Trigger price types: `last`, `index`, `mark`.
 
@@ -286,20 +339,61 @@ Trigger price types: `last`, `index`, `mark`.
 
 ```
 POST /deepcoin/trade/close-position-by-ids
-    Params: productGroup (Spot/Swap/SwapU), instId, positionIds (array)
+```
+
+`close-position-by-ids` params:
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
+| instId | Yes | Instrument ID |
+| positionIds | Yes | Array of position IDs; at least one item |
+
+```
 
 POST /deepcoin/trade/batch-close-position
-    Params: productGroup (Spot/Swap/SwapU), instId
 ```
+
+`batch-close-position` params:
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
+| instId | Yes | Instrument ID |
 
 ### 24–25. Trace Orders
 
 ```
 POST /deepcoin/trade/trace-order
-    Params: instId, retracePoint, triggerPrice, posSide (long/short)
+```
 
+`trace-order` params:
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| instId | Yes | Instrument ID |
+| retracePoint | Yes | Pullback spread |
+| triggerPrice | Yes | Activation price; `0` cancels, `-1` activates immediately |
+| posSide | Yes | `long`, `short`; `SWAP` only |
+
+Notes:
+- Trace order is supported only in cross margin mode with merged position mode.
+- Positive `triggerPrice` must keep at least 0.1% difference from the latest price.
+
+```
 GET /deepcoin/trade/trace-order-list
-    Returns: array with retracePoint, triggerPrice, breakPrice, isTriggered, createTime
+```
+
+`trace-order-list` params:
+
+| Param | Required | Values / Description |
+|-------|----------|----------------------|
+| instType | No | `SPOT` or `SWAP`; optional in docs, but some client flows still send it |
+| instId | Yes | Product ID in official docs; e.g. `BTC-USDT-SWAP` |
+
+Returns: array with `retracePoint`, `triggerPrice`, `breakPrice`, `isTriggered`, `posSide`, `createTime`.
+
+Observed behavior during testing: `instType=SWAP` without `instId` returns `The instId field is required`; `instType=SWAP&instId=BTC-USDT-SWAP` may return `data=[]` when there are no pending trace orders.
 ```
 
 ---
