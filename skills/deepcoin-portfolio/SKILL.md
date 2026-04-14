@@ -93,11 +93,15 @@ Every request must include these headers:
 
 ```
 1. Identify intent: balance? positions? leverage? transfer? deposit history?
-2. Select the correct endpoint from the index
-3. For WRITE operations (leverage, transfers) → present summary → confirm with user
-4. Build authenticated request
-5. Execute and present results
-6. After WRITE → verify with a corresponding READ
+2. For balance queries:
+   - If user explicitly says spot / 现货 → query `GET /deepcoin/account/balances` with `instType=SPOT`
+   - If user explicitly says swap / contract / 合约 → query `GET /deepcoin/account/balances` with `instType=SWAP`
+   - If user does **not** specify spot vs swap → query both `instType=SPOT` and `instType=SWAP`, then present both results clearly
+3. Select the correct endpoint from the index
+4. For WRITE operations (leverage, transfers) → present summary → confirm with user
+5. Build authenticated request
+6. Execute and present results
+7. After WRITE → verify with a corresponding READ
 ```
 
 ---
@@ -118,6 +122,7 @@ GET /deepcoin/account/balances
 Response: `ccy`, `bal`, `frozenBal`, `availBal`, `unrealizedProfit`, `equity`.
 
 Observed behavior: omitting `instType` may return an empty list without an explicit error.
+Balance-query rule: when the user asks to "check balance" but does not specify spot vs swap, run this endpoint twice with `instType=SPOT` and `instType=SWAP`, then report both sections.
 
 ### 2. Account Bills
 
