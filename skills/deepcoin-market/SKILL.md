@@ -4,7 +4,7 @@ description: "Use this skill when the user asks for: price of any crypto asset o
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.0"
+  version: "1.0.1"
   homepage: "https://api.deepcoin.com"
 ---
 
