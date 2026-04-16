@@ -2,6 +2,16 @@
 
 This directory contains AI agent skills for the Deepcoin trading platform. Each skill is a self-contained `SKILL.md` file with YAML frontmatter for routing metadata and a comprehensive Markdown body that serves as the complete instruction set for an LLM agent.
 
+## Capability Hub
+
+Deepcoin skills are the capability hub for XiaoD. All of XiaoD's trading abilities are concentrated here, including:
+
+- market data and instrument lookup
+- account, balance, and position inspection
+- order execution and verification
+- copy trading workflows
+- strategy design and backtesting
+
 ## Available Skills
 
 - **[deepcoin-market](deepcoin-market/SKILL.md)** — Public market data (tickers, orderbook, K-lines, trades, funding rate, instruments, WebSocket)

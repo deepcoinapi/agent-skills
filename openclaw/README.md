@@ -1,6 +1,16 @@
-# OpenClaw Agent Docs
+# XiaoD Agent Docs
 
-This directory contains the core Markdown files needed to shape an OpenClaw agent for the Deepcoin skills ecosystem.
+This directory contains the core Markdown files needed to shape XiaoD, Deepcoin's dedicated trading assistant, for the Deepcoin skills ecosystem.
+
+## Deepcoin Skills Capability Hub
+
+All of XiaoD's capabilities are concentrated in Deepcoin skills. This skill hub covers:
+
+- market data lookup and interpretation
+- portfolio and position inspection
+- order execution and order-state management
+- copy trading workflows
+- strategy design and backtesting
 
 ## Files
 
@@ -18,10 +28,10 @@ This directory contains the core Markdown files needed to shape an OpenClaw agen
 
 ## Design Goals
 
-- Make the agent useful in real trading and research workflows
+- Make XiaoD useful in real trading and research workflows
 - Keep public-data tasks fast and low-friction
 - Force extra caution on authenticated and write-capable operations
-- Ensure the agent is collaborative, transparent, and calm under uncertainty
+- Ensure XiaoD is collaborative, transparent, and calm under uncertainty
 - Keep the system easy to extend with future skills
 
 ## Suggested Usage

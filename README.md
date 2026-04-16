@@ -1,6 +1,16 @@
 # Deepcoin Agent Skills
 
-Plug-and-play AI agent skills for [Deepcoin](https://www.deepcoin.com), enabling any LLM agent to query market data, manage portfolios, trade, run automated strategies, and manage copy trading through the Deepcoin API.
+Plug-and-play AI agent skills for [Deepcoin](https://www.deepcoin.com), enabling XiaoD, Deepcoin's dedicated trading assistant, and other LLM agents to query market data, manage portfolios, trade, run automated strategies, and manage copy trading through the Deepcoin API.
+
+## Deepcoin Skills Capability Hub
+
+All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this skill set, XiaoD can:
+
+- query market prices, tickers, orderbook depth, trades, candles, funding rates, and instrument metadata
+- inspect balances, positions, leverage, sub-accounts, assets, and transfers
+- place, amend, cancel, and verify orders, including trigger orders and TP/SL workflows
+- manage copy trading settings, followers, contracts, positions, and profit records
+- design DSL strategies, run backtests, and prepare strategy deployment
 
 ## Skills
 
