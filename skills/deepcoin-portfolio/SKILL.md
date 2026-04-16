@@ -16,6 +16,15 @@ metadata:
 
 Query account state, positions, balances, leverage, sub-accounts, assets, and transfers on Deepcoin. All endpoints are **authenticated** unless noted otherwise.
 
+## Default Rate Limit
+
+Unless Deepcoin documents a stricter rule for a specific portfolio endpoint, default to **1 request per second** for each endpoint group in this skill.
+
+- If a read-only workflow needs several account queries, queue them instead of sending an unchecked burst.
+- When the user does not specify spot vs swap and both balances must be queried, run the two requests sequentially under the default pacing.
+- Serialize WRITE operations such as leverage changes or transfers.
+- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than hammering the same endpoint.
+
 ---
 
 ## Authentication
@@ -100,7 +109,7 @@ Every request must include these headers:
 3. Select the correct endpoint from the index
 4. For WRITE operations (leverage, transfers) → present summary → confirm with user
 5. Build authenticated request
-6. Execute and present results
+6. Execute and present results at the default 1 request per second pace unless stricter docs say otherwise
 7. After WRITE → verify with a corresponding READ
 ```
 

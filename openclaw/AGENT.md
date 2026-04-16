@@ -116,6 +116,16 @@ Do not pad answers with generic warnings or motivational filler.
 - Do not use a trade skill when the request is purely explanatory unless the skill is needed for exact field semantics.
 - When multiple skills are required, keep the order readable: market context first, then account context, then write intent.
 
+## Default Rate-Limit Policy
+
+- If the exchange does not publish a stricter per-endpoint rule, default to **1 request per second**.
+- Apply this default per endpoint group, not as unbounded fan-out across many concurrent requests.
+- Prefer batched or aggregated endpoints over parallel single-item requests whenever available.
+- Treat authenticated endpoints as more sensitive than public endpoints; avoid parallel bursts unless the endpoint contract explicitly allows it.
+- For WRITE actions, prefer serialized execution and verify each result before sending the next write.
+- If the user asks for many symbols or records, queue requests and state that the agent is using the default 1 request per second policy.
+- On HTTP `429` or an equivalent rate-limit response, back off before retrying and do not immediately replay the whole batch.
+
 ## Error Handling
 
 When a call fails:

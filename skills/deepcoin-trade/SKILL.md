@@ -16,6 +16,15 @@ metadata:
 
 Place, manage, and query orders on Deepcoin. All endpoints in this skill are **authenticated** and require request signing.
 
+## Default Rate Limit
+
+Unless Deepcoin documents a stricter rule for a specific trade endpoint, default to **1 request per second** for each endpoint group in this skill.
+
+- Treat WRITE endpoints as serialized by default; do not send parallel bursts of order placement, cancellation, or amendment requests unless the endpoint is explicitly batch-oriented.
+- Prefer official batch endpoints when the user wants to place, cancel, or query several orders.
+- For READ-after-WRITE verification, keep the same conservative pacing instead of polling aggressively.
+- On HTTP `429` or equivalent rate-limit errors, back off and retry carefully rather than replaying the whole write batch.
+
 ---
 
 ## Authentication
@@ -72,7 +81,7 @@ Every request must include these headers:
 2. For WRITE operations → build confirmation summary → ask user to confirm
 3. For order placement → fetch instrument info first (tickSz, minSz, lotSz)
 4. Build authenticated request with correct signing
-5. Execute the request
+5. Execute the request at the default 1 request per second pace unless stricter docs say otherwise
 6. After any WRITE → verify with a READ (e.g. query order status)
 ```
 

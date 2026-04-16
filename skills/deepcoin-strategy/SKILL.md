@@ -16,6 +16,14 @@ metadata:
 
 Create and backtest automated trading strategies on Deepcoin using a DSL (Domain Specific Language) that supports technical indicators and conditional entry/exit logic. All endpoints are **authenticated**.
 
+## Default Rate Limit
+
+Unless Deepcoin documents a stricter rule for a specific strategy endpoint, default to **1 request per second** for each endpoint group in this skill.
+
+- Run repeated backtests sequentially unless the upstream contract explicitly allows higher concurrency.
+- Serialize live DSL trigger-order submissions by default.
+- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than replaying the full batch immediately.
+
 ---
 
 ## Authentication
@@ -49,7 +57,7 @@ Every request must include these headers:
 2. Build the DSL JSON structure
 3. Run a backtest first to validate the strategy
 4. Review backtest results with user
-5. If user confirms → deploy as a live DSL trigger order
+5. If user confirms → deploy as a live DSL trigger order at the default 1 request per second pace unless stricter docs say otherwise
 6. ALWAYS backtest before deploying live
 ```
 

@@ -45,6 +45,15 @@ Users can pass a custom API Base URL.
 - If `base_url` is provided, use that value.
 - If `base_url` is not provided, default to `https://api.deepcoin.com`.
 
+## Default Rate Limit
+
+Unless an endpoint-specific exchange limit is documented separately, these skills should assume a conservative default of **1 request per second**.
+
+- Apply the default to each endpoint group being called.
+- Prefer aggregate or batch endpoints instead of high fan-out parallel requests.
+- Serialize WRITE requests by default.
+- If a request returns `429` or another explicit rate-limit signal, back off and retry later instead of replaying the entire batch immediately.
+
 ## Authentication
 
 Authenticated endpoints require four headers:

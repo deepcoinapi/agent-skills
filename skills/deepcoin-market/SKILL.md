@@ -12,6 +12,15 @@ metadata:
 
 Retrieve public market data from Deepcoin via REST APIs and public WebSocket channels. All endpoints in this skill are **unauthenticated** — no API key required.
 
+## Default Rate Limit
+
+Unless Deepcoin documents a stricter rule for a specific market-data endpoint, default to **1 request per second** for each endpoint group in this skill.
+
+- Do not fan out unbounded parallel requests for many symbols.
+- Prefer endpoints that can return multiple instruments in one call, such as ticker or funding snapshots, before looping over single-instrument queries.
+- When the user requests many symbols, queue REST calls and explain that the skill is using the default 1 request per second policy.
+- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than immediately replaying the full batch.
+
 ## Compliance Disclaimer
 
 Market data returned by these APIs is raw exchange data. It is **not** financial advice. The agent must never interpret price data as a buy/sell recommendation.
@@ -50,8 +59,9 @@ Market data returned by these APIs is raw exchange data. It is **not** financial
 1. Identify user intent (price? depth? candles? streaming?)
 2. Select the correct endpoint from the index above
 3. Build the request with required parameters
-4. Return a minimal, runnable code snippet (Python / JS / cURL)
-5. Explain what the response fields mean if the user is unfamiliar
+4. If multiple REST calls are needed, queue them at the default 1 request per second rate unless stricter docs say otherwise
+5. Return a minimal, runnable code snippet (Python / JS / cURL)
+6. Explain what the response fields mean if the user is unfamiliar
 ```
 
 ---

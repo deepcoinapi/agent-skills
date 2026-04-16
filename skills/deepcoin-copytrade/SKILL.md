@@ -16,6 +16,14 @@ metadata:
 
 Manage copy trading features on Deepcoin — leader settings, follower management, supported contracts, positions, and profit tracking. All endpoints are **authenticated**.
 
+## Default Rate Limit
+
+Unless Deepcoin documents a stricter rule for a specific copy-trading endpoint, default to **1 request per second** for each endpoint group in this skill.
+
+- Queue follower, position, and profit queries instead of firing parallel bursts.
+- Serialize WRITE operations such as leader settings, contract updates, and position-type changes.
+- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than replaying the whole batch immediately.
+
 ---
 
 ## Authentication
@@ -55,7 +63,7 @@ Every request must include these headers:
 1. Identify intent: configure leader? check followers? view positions? profit?
 2. For WRITE operations → present summary → confirm with user
 3. Build authenticated request
-4. Execute and present results
+4. Execute and present results at the default 1 request per second pace unless stricter docs say otherwise
 5. After WRITE → verify with corresponding READ
 ```
 
