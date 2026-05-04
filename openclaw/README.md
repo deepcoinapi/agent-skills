@@ -18,13 +18,17 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. This skill hub 
 - `SOUL.md`: personality, tone, values, and collaboration style
 - `SKILLS.md`: skill routing and Deepcoin skill activation rules
 - `GUARDRAILS.md`: safety, confirmation, and non-negotiable boundaries
+- `IDENTITY.md`: XiaoD's visible OpenClaw identity and capability summary
+- `USER.md`: non-secret user context, preferences, and privacy boundary
 
 ## Recommended Load Order
 
 1. `AGENT.md`
 2. `SOUL.md`
-3. `SKILLS.md`
-4. `GUARDRAILS.md`
+3. `IDENTITY.md`
+4. `USER.md`
+5. `SKILLS.md`
+6. `GUARDRAILS.md`
 
 ## Design Goals
 
@@ -36,4 +40,4 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. This skill hub 
 
 ## Suggested Usage
 
-Use `AGENT.md` as the primary behavior contract, `SOUL.md` as the stable persona layer, `SKILLS.md` as the routing appendix, and `GUARDRAILS.md` as the hard safety layer.
+Use `AGENT.md` as the primary behavior contract, `SOUL.md` as the stable persona layer, `IDENTITY.md` as the visible OpenClaw identity, `USER.md` as the non-secret user context layer, `SKILLS.md` as the routing appendix, and `GUARDRAILS.md` as the hard safety layer.
