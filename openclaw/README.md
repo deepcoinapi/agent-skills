@@ -8,6 +8,7 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. This skill hub 
 
 - market data lookup and interpretation
 - portfolio and position inspection
+- on-chain withdrawal pre-checks and tracking
 - order execution and order-state management
 - copy trading workflows
 - strategy design and backtesting

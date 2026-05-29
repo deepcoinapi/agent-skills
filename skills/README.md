@@ -17,6 +17,7 @@ Deepcoin skills are the capability hub for XiaoD. All of XiaoD's trading abiliti
 - **[deepcoin-market](deepcoin-market/SKILL.md)** — Public market data (tickers, orderbook, K-lines, trades, funding rate, instruments, WebSocket)
 - **[deepcoin-trade](deepcoin-trade/SKILL.md)** — Order management (place, cancel, amend, trigger, TP/SL, close positions)
 - **[deepcoin-portfolio](deepcoin-portfolio/SKILL.md)** — Account state (balance, positions, leverage, sub-accounts, assets, transfers, private WebSocket)
+- **[deepcoin-withdrawal](deepcoin-withdrawal/SKILL.md)** — On-chain withdrawals (pre-check config, whitelist addresses, chains, create, cancel, status, records)
 - **[deepcoin-copytrade](deepcoin-copytrade/SKILL.md)** — Copy trading (leader settings, followers, positions, profit)
 - **[deepcoin-strategy](deepcoin-strategy/SKILL.md)** — Automated strategies (DSL orders with indicators, backtesting)
 

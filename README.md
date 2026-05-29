@@ -8,6 +8,7 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this sk
 
 - query market prices, tickers, orderbook depth, trades, candles, funding rates, and instrument metadata
 - inspect balances, positions, leverage, sub-accounts, assets, and transfers
+- pre-check, create, cancel, and query on-chain withdrawals
 - place, amend, cancel, and verify orders, including trigger orders and TP/SL workflows
 - manage copy trading settings, followers, contracts, positions, and profit records
 - design DSL strategies, run backtests, and prepare strategy deployment
@@ -18,7 +19,8 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this sk
 |-------|-------------|:---:|
 | [deepcoin-market](skills/deepcoin-market/SKILL.md) | Public market data: tickers, orderbook, K-lines, trades, funding rate, instruments, WebSocket streams | No |
 | [deepcoin-trade](skills/deepcoin-trade/SKILL.md) | Order placement, cancellation, amendment, trigger orders, TP/SL, position close, trade fills | Yes |
-| [deepcoin-portfolio](skills/deepcoin-portfolio/SKILL.md) | Account balance, positions, leverage, sub-accounts, asset transfers, deposits/withdrawals, private WebSocket | Yes |
+| [deepcoin-portfolio](skills/deepcoin-portfolio/SKILL.md) | Account balance, positions, leverage, sub-accounts, asset transfers, deposits, private WebSocket | Yes |
+| [deepcoin-withdrawal](skills/deepcoin-withdrawal/SKILL.md) | On-chain withdrawal config, whitelist addresses, chains, create, cancel, status, and records | Yes |
 | [deepcoin-copytrade](skills/deepcoin-copytrade/SKILL.md) | Copy trading: leader settings, follower management, positions, profit tracking | Yes |
 | [deepcoin-strategy](skills/deepcoin-strategy/SKILL.md) | DSL strategy orders with technical indicators (BOLL, MA, EMA, KDJ, RSI, WR) and backtesting | Yes |
 
@@ -31,6 +33,8 @@ skills/
   deepcoin-trade/
     SKILL.md
   deepcoin-portfolio/
+    SKILL.md
+  deepcoin-withdrawal/
     SKILL.md
   deepcoin-copytrade/
     SKILL.md
@@ -45,6 +49,7 @@ Each skill defines clear boundaries in its `description` field. An AI agent shou
 - **Price / ticker / candles / orderbook / funding rate** → `deepcoin-market`
 - **Place / cancel / amend orders / trigger orders / TP-SL** → `deepcoin-trade`
 - **Balance / positions / leverage / transfers / sub-accounts** → `deepcoin-portfolio`
+- **On-chain withdrawals / withdrawal whitelist / withdrawal status** → `deepcoin-withdrawal`
 - **Copy trading setup / followers / leader positions** → `deepcoin-copytrade`
 - **Automated strategies / backtesting / DSL orders** → `deepcoin-strategy`
 

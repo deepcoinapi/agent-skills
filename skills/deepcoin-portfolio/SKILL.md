@@ -1,6 +1,6 @@
 ---
 name: deepcoin-portfolio
-description: "Use this skill when the user asks for: Deepcoin account balance, equity, available margin, frozen balance, unrealized PnL, open positions, position details (leverage, liquidation price, margin), account bills / transaction history, UID, leverage settings, sub-account management, sub-account transfers, internal transfers between users, asset deposits / withdrawals / chain info, or private WebSocket streams for account and position updates. Do NOT use for public market data (use deepcoin-market), order placement / cancellation (use deepcoin-trade), copy trading (use deepcoin-copytrade), or strategy orders (use deepcoin-strategy)."
+description: "Use this skill when the user asks for: Deepcoin account balance, equity, available margin, frozen balance, unrealized PnL, open positions, position details (leverage, liquidation price, margin), account bills / transaction history, UID, leverage settings, sub-account management, sub-account transfers, internal transfers between users, asset deposits, asset transfers, or private WebSocket streams for account and position updates. Do NOT use for on-chain withdrawal create / cancel / status / whitelist / chain config (use deepcoin-withdrawal), public market data (use deepcoin-market), order placement / cancellation (use deepcoin-trade), copy trading (use deepcoin-copytrade), or strategy orders (use deepcoin-strategy)."
 license: MIT
 metadata:
   author: Deepcoin
@@ -68,9 +68,8 @@ Every request must include these headers:
 | # | Endpoint | Method | Path | Type |
 |---|----------|--------|------|------|
 | 10 | Deposit list | GET | `/deepcoin/asset/deposit-list` | READ |
-| 11 | Withdrawal list | GET | `/deepcoin/asset/withdraw-list` | READ |
-| 12 | Asset transfer | POST | `/deepcoin/asset/transfer` | **WRITE** |
-| 13 | Recharge chain list | GET | `/deepcoin/asset/recharge-chain-list` | READ |
+| 11 | Asset transfer | POST | `/deepcoin/asset/transfer` | **WRITE** |
+| 12 | Recharge chain list | GET | `/deepcoin/asset/recharge-chain-list` | READ |
 
 ### Internal Transfer
 
@@ -234,11 +233,10 @@ GET /deepcoin/sub-account/sub-account-balance-total
 
 Official docs include this endpoint, but observed behavior is `404 Not Found`. Treat it as unavailable unless the upstream service is restored.
 
-### 10–11. Deposit / Withdrawal Lists
+### 10. Deposit List
 
 ```
 GET /deepcoin/asset/deposit-list
-GET /deepcoin/asset/withdraw-list
 ```
 
 | Param | Required |
@@ -389,3 +387,4 @@ Access note: these endpoints may return `403` with code `51028` until Deepcoin s
 | Place / cancel / amend orders, trigger orders, TP/SL | `deepcoin-trade` |
 | Copy trading settings, followers, leader positions | `deepcoin-copytrade` |
 | DSL strategy orders, backtesting | `deepcoin-strategy` |
+| On-chain withdrawal create/cancel/status/config/whitelist | `deepcoin-withdrawal` |

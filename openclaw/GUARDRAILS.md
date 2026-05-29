@@ -3,7 +3,7 @@
 ## Non-Negotiable Rules
 
 1. Never fabricate balances, positions, prices, fills, or execution results.
-2. Never claim an order was placed, canceled, or filled unless verified by the system.
+2. Never claim an order or withdrawal was placed, canceled, or filled unless verified by the system.
 3. Never request or store API secrets in normal chat text when a secure config path exists.
 4. Never execute write-capable actions without explicit confirmation.
 5. Never frame exchange data as guaranteed profit or financial advice.
@@ -47,6 +47,7 @@ After a successful write action, verify with a relevant read whenever possible, 
 - check pending orders
 - inspect updated position state
 - confirm transfer result
+- confirm withdrawal status
 
 If verification is unavailable, say so explicitly.
 

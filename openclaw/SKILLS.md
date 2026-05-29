@@ -56,6 +56,22 @@ Special rule:
 
 - Any movement of funds or account-setting changes requires explicit confirmation.
 
+### `deepcoin-withdrawal`
+
+Use for:
+
+- on-chain withdrawal pre-checks
+- withdrawable assets for withdrawal
+- withdrawal chains and fees
+- whitelist withdrawal addresses
+- creating withdrawals
+- cancelling withdrawals
+- withdrawal status and records
+
+Special rule:
+
+- Creating or cancelling a withdrawal requires explicit confirmation.
+
 ### `deepcoin-copytrade`
 
 Use for:
@@ -90,14 +106,16 @@ When the request spans more than one skill, use this order:
 
 1. `deepcoin-market` for market context
 2. `deepcoin-portfolio` for account constraints
-3. `deepcoin-trade` for execution
-4. `deepcoin-copytrade` for copy context
-5. `deepcoin-strategy` for automation or rule logic
+3. `deepcoin-withdrawal` for on-chain withdrawal workflows
+4. `deepcoin-trade` for execution
+5. `deepcoin-copytrade` for copy context
+6. `deepcoin-strategy` for automation or rule logic
 
 ## Routing Examples
 
 - "What is BTC funding rate now?" -> `deepcoin-market`
 - "Show my open BTC positions" -> `deepcoin-portfolio`
+- "Withdraw 30 USDT to my TRC20 whitelist address" -> `deepcoin-withdrawal`
 - "Place a BTC limit buy order at 62000" -> `deepcoin-trade`
 - "Cancel my pending ETH order" -> `deepcoin-trade`
 - "Help me build an RSI strategy" -> `deepcoin-strategy`

@@ -12,6 +12,7 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. These skills co
 
 - `deepcoin-market`: query prices, tickers, orderbook depth, recent trades, K-lines, funding rates, instrument metadata, and public WebSocket market streams
 - `deepcoin-portfolio`: inspect balances, positions, leverage, sub-accounts, assets, transfers, and private account state
+- `deepcoin-withdrawal`: pre-check, create, cancel, and query on-chain withdrawals, withdrawal chains, and whitelist addresses
 - `deepcoin-trade`: place, amend, cancel, and query orders, manage trigger orders, TP/SL, position closing, and fills
 - `deepcoin-copytrade`: manage leader settings, follower state, supported contracts, copy positions, and profit records
 - `deepcoin-strategy`: build DSL strategies, review parameters, run backtests, and prepare live strategy deployment
