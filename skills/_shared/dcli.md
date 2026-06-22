@@ -1,27 +1,27 @@
 # Deepcoin CLI Execution Rules
 
-Use `deepcoin-cli` as the execution boundary for every Deepcoin skill.
+Use `dcli` as the execution boundary for every Deepcoin skill.
 
 ## Preflight
 
 Run these checks once per session before any Deepcoin command:
 
 ```bash
-deepcoin-cli --version
-deepcoin-cli list-tools
+dcli --version
+dcli list-tools
 ```
 
-If `deepcoin-cli` is missing, install or build the CLI first:
+If `dcli` is missing, install or build the CLI first:
 
 ```bash
-go install github.com/deepcoinapi/agent-cli@latest
+go install github.com/deepcoinapi/agent-cli/cmd/dcli@latest
 ```
 
 or from a local checkout:
 
 ```bash
 cd /path/to/agent-cli
-go build -o deepcoin-cli .
+go build -o dcli .
 ```
 
 ## Environment
@@ -43,7 +43,7 @@ Do not create ad hoc Python, JavaScript, shell, curl-signing, or multi-step requ
 
 Allowed execution forms:
 
-- `deepcoin-cli ...` commands listed in the skill references
+- `dcli ...` commands listed in the skill references
 - simple shell wrappers around one CLI command, such as setting environment variables or piping `--json` output to `jq`
 - reading a user-provided JSON file for flags that explicitly support `@file`, such as strategy DSL files
 

@@ -6,6 +6,15 @@ metadata:
   author: Deepcoin
   version: "1.0.2"
   homepage: "https://api.deepcoin.com"
+  agent:
+    requires:
+      bins: ["dcli"]
+    install:
+      - id: go
+        kind: go
+        package: "github.com/deepcoinapi/agent-cli/cmd/dcli@latest"
+        bins: ["dcli"]
+        label: "Install Deepcoin CLI"
   openclaw:
     primaryEnv: DC_API_KEY
     requires:
@@ -18,7 +27,7 @@ Create and backtest automated trading strategies on Deepcoin using a DSL (Domain
 
 ## CLI Execution
 
-Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 Use only the stable CLI commands in [`references/strategy-commands.md`](references/strategy-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs. Creating or editing DSL JSON files is allowed when the user asks for a strategy artifact.
 
 ## Performance and Rate Limits
@@ -61,11 +70,11 @@ Every request must include these headers:
 ```
 1. Understand the user's strategy intent (indicators, entry/exit logic, risk)
 2. Build the DSL JSON structure
-3. Run `deepcoin-cli strategy backtest` when the user requests validation, comparison, or live deployment preparation
+3. Run `dcli strategy backtest` when the user requests validation, comparison, or live deployment preparation
 4. Review backtest results with user
-5. If user confirms → deploy with `deepcoin-cli strategy dsl-trigger-order`
+5. If user confirms → deploy with `dcli strategy dsl-trigger-order`
 6. Always backtest before deploying live, but do not require a backtest for pure DSL drafting or explanation
-7. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+7. If the requested operation is not exposed by dcli, stop and report the missing CLI command
 ```
 
 ---

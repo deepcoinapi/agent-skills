@@ -14,11 +14,11 @@ Deepcoin skills are the capability hub for XiaoD. All of XiaoD's trading abiliti
 
 ## CLI Execution Boundary
 
-Every skill is backed by stable `deepcoin-cli` commands.
+Every skill is backed by stable `dcli` commands.
 
-- Shared preflight and credential rules: [`_shared/deepcoin-cli.md`](_shared/deepcoin-cli.md)
+- Shared preflight and credential rules: [`_shared/dcli.md`](_shared/dcli.md)
 - Per-skill command references: `deepcoin-*/references/*-commands.md`
-- Agents should call `deepcoin-cli ...` directly and should not write custom API request/signing scripts.
+- Agents should call `dcli ...` directly and should not write custom API request/signing scripts.
 - Missing command coverage should be reported as a CLI gap.
 
 ## Available Skills
@@ -56,7 +56,7 @@ metadata:
 
 Followed by: CLI execution rules, endpoint index (with READ/WRITE classification), operation flow, endpoint reference, safety rules, decision workflows, edge cases, scope & boundaries, and examples.
 
-Each skill must include a `CLI Execution` section that links to `_shared/deepcoin-cli.md` and to its command reference file.
+Each skill must include a `CLI Execution` section that links to `_shared/dcli.md` and to its command reference file.
 
 ## API Base URL Convention
 

@@ -6,6 +6,15 @@ metadata:
   author: Deepcoin
   version: "1.0.2"
   homepage: "https://api.deepcoin.com"
+  agent:
+    requires:
+      bins: ["dcli"]
+    install:
+      - id: go
+        kind: go
+        package: "github.com/deepcoinapi/agent-cli/cmd/dcli@latest"
+        bins: ["dcli"]
+        label: "Install Deepcoin CLI"
 ---
 
 # Deepcoin Market Skill
@@ -14,7 +23,7 @@ Retrieve public market data from Deepcoin via REST APIs and public WebSocket cha
 
 ## CLI Execution
 
-Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 Use only the stable CLI commands in [`references/market-commands.md`](references/market-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
 ## Performance and Rate Limits
@@ -64,8 +73,8 @@ Market data returned by these APIs is raw exchange data. It is **not** financial
 ```
 1. Identify user intent (price? depth? candles? streaming?)
 2. Select the correct command from references/market-commands.md
-3. Run the matching deepcoin-cli command directly; add --json only when raw output is needed
-4. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+3. Run the matching dcli command directly; add --json only when raw output is needed
+4. If the requested operation is not exposed by dcli, stop and report the missing CLI command
 5. Explain what the response fields mean if the user is unfamiliar
 ```
 
@@ -299,18 +308,18 @@ K-line periods: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `12h`, `1d`, `1w`, `1o`, `
 ### Get BTC-USDT spot ticker
 
 ```bash
-deepcoin-cli market ticker BTC-USDT --json
+dcli market ticker BTC-USDT --json
 ```
 
 ### Get 1-hour K-lines for BTC-USDT-SWAP
 
 ```bash
-deepcoin-cli market candles BTC-USDT-SWAP --bar 1H --limit 100 --json
+dcli market candles BTC-USDT-SWAP --bar 1H --limit 100 --json
 ```
 
 ### Subscribe to real-time trades via WebSocket
 
 ```text
-Current CLI gap: deepcoin-cli does not expose public WebSocket streaming commands yet.
+Current CLI gap: dcli does not expose public WebSocket streaming commands yet.
 Report the missing command instead of writing a temporary WebSocket client.
 ```

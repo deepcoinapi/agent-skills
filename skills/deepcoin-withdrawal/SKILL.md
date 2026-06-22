@@ -6,6 +6,15 @@ metadata:
   author: Deepcoin
   version: "1.0.2"
   homepage: "https://api.deepcoin.com"
+  agent:
+    requires:
+      bins: ["dcli"]
+    install:
+      - id: go
+        kind: go
+        package: "github.com/deepcoinapi/agent-cli/cmd/dcli@latest"
+        bins: ["dcli"]
+        label: "Install Deepcoin CLI"
   openclaw:
     primaryEnv: DC_API_KEY
     requires:
@@ -18,7 +27,7 @@ Create, cancel, pre-check, and query Deepcoin on-chain withdrawals. All endpoint
 
 ## CLI Execution
 
-Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 Use only the stable CLI commands in [`references/withdrawal-commands.md`](references/withdrawal-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
 ## Performance and Rate Limits
@@ -71,10 +80,10 @@ Every request must include these headers:
 3. For cancel:
    - Query the withdrawal first when wdId state/canCancel is unknown.
    - Present a cancellation summary and wait for explicit user confirmation.
-   - Run `deepcoin-cli withdrawal cancel` once, then verify with `deepcoin-cli withdrawal status`.
+   - Run `dcli withdrawal cancel` once, then verify with `dcli withdrawal status`.
 4. For read-only queries:
-   - Use the narrowest CLI command; use `deepcoin-cli withdrawal config` for pre-withdrawal checks.
-5. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command.
+   - Use the narrowest CLI command; use `dcli withdrawal config` for pre-withdrawal checks.
+5. If the requested operation is not exposed by dcli, stop and report the missing CLI command.
 ```
 
 ## Endpoint Reference

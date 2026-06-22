@@ -15,14 +15,14 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this sk
 
 ## CLI-Backed Execution Model
 
-These skills are instruction and routing layers. Execution must go through `deepcoin-cli`, not ad hoc scripts.
+These skills are instruction and routing layers. Execution must go through `dcli`, not ad hoc scripts.
 
 - Each skill provides stable command references under `skills/<skill>/references/*-commands.md`.
-- Agents must run `deepcoin-cli ...` commands from those references.
+- Agents must run `dcli ...` commands from those references.
 - Agents must not temporarily assemble Python, JavaScript, shell, cURL-signing, or custom HTTP clients to call Deepcoin APIs.
 - If a needed API is missing from the CLI, report the missing CLI command instead of improvising.
 
-Preflight and environment rules are centralized in [`skills/_shared/deepcoin-cli.md`](skills/_shared/deepcoin-cli.md).
+Preflight and environment rules are centralized in [`skills/_shared/dcli.md`](skills/_shared/dcli.md).
 
 ## Skills
 
@@ -58,7 +58,7 @@ skills/
     SKILL.md
     references/strategy-commands.md
   _shared/
-    deepcoin-cli.md
+    dcli.md
 ```
 
 ## Skill Routing

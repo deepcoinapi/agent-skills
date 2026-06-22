@@ -6,6 +6,15 @@ metadata:
   author: Deepcoin
   version: "1.0.2"
   homepage: "https://api.deepcoin.com"
+  agent:
+    requires:
+      bins: ["dcli"]
+    install:
+      - id: go
+        kind: go
+        package: "github.com/deepcoinapi/agent-cli/cmd/dcli@latest"
+        bins: ["dcli"]
+        label: "Install Deepcoin CLI"
   openclaw:
     primaryEnv: DC_API_KEY
     requires:
@@ -18,7 +27,7 @@ Query account state, positions, balances, leverage, sub-accounts, assets, and tr
 
 ## CLI Execution
 
-Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 Use only the stable CLI commands in [`references/portfolio-commands.md`](references/portfolio-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
 ## Performance and Rate Limits
@@ -113,8 +122,8 @@ Every request must include these headers:
 3. Select the correct endpoint from the index
 4. For WRITE operations (leverage, transfers) → present summary → confirm with user
 5. Select the correct command from references/portfolio-commands.md
-6. Run the matching deepcoin-cli command; the CLI handles authentication and signing
-7. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+6. Run the matching dcli command; the CLI handles authentication and signing
+7. If the requested operation is not exposed by dcli, stop and report the missing CLI command
 8. After WRITE → verify with one targeted corresponding READ command
 ```
 
