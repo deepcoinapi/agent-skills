@@ -4,7 +4,7 @@ description: "Use this skill when the user wants to: place, cancel, amend, or qu
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: "https://api.deepcoin.com"
   openclaw:
     primaryEnv: DC_API_KEY
@@ -16,13 +16,19 @@ metadata:
 
 Place, manage, and query orders on Deepcoin. All endpoints in this skill are **authenticated** and require request signing.
 
-## Default Rate Limit
+## CLI Execution
 
-Unless Deepcoin documents a stricter rule for a specific trade endpoint, default to **1 request per second** for each endpoint group in this skill.
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/trade-commands.md`](references/trade-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
-- Treat WRITE endpoints as serialized by default; do not send parallel bursts of order placement, cancellation, or amendment requests unless the endpoint is explicitly batch-oriented.
+## Performance and Rate Limits
+
+Keep writes safe, but avoid unnecessary read latency.
+
+- Trading WRITE endpoints are typically limited to **1 request per second per API key**; serialize non-batch writes unless official docs say otherwise.
 - Prefer official batch endpoints when the user wants to place, cancel, or query several orders.
-- For READ-after-WRITE verification, keep the same conservative pacing instead of polling aggressively.
+- For independent READ-only order queries, use batch query endpoints or bounded concurrency when endpoint limits permit it.
+- For READ-after-WRITE verification, perform one targeted verification read; avoid aggressive polling unless the user explicitly asks to wait for a fill.
 - On HTTP `429` or equivalent rate-limit errors, back off and retry carefully rather than replaying the whole write batch.
 
 ---
@@ -79,10 +85,11 @@ Every request must include these headers:
 ```
 1. Identify intent: place / cancel / amend / query / TP-SL / close
 2. For WRITE operations → build confirmation summary → ask user to confirm
-3. For order placement → fetch instrument info first (tickSz, minSz, lotSz)
-4. Build authenticated request with correct signing
-5. Execute the request at the default 1 request per second pace unless stricter docs say otherwise
-6. After any WRITE → verify with a READ (e.g. query order status)
+3. For order placement → fetch instrument info only when constraints are unknown or the requested price/size needs validation
+4. Select the correct command from references/trade-commands.md
+5. Run the matching deepcoin-cli command; the CLI handles authentication and signing
+6. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+7. After any WRITE → verify with one targeted READ command (e.g. query the affected order)
 ```
 
 ---
@@ -415,7 +422,7 @@ Observed behavior during testing: `instType=SWAP` without `instId` returns `The 
 
 2. **Never fabricate** order IDs, fill data, or execution results.
 
-3. **Always fetch instrument metadata first** (`/deepcoin/market/instruments`) to validate `tickSz`, `minSz`, `lotSz` before generating order parameters.
+3. **Fetch instrument metadata only when needed** (`/deepcoin/market/instruments`) to validate `tickSz`, `minSz`, `lotSz`. Skip the extra call when valid metadata is already in context or the user is only asking for a draft that will not be executed.
 
 4. **Preserve field values exactly** as documented: `tdMode`, `side`, `ordType`, `posSide`, `mrgPosition`.
 
@@ -424,7 +431,7 @@ Observed behavior during testing: `instType=SWAP` without `instId` returns `The 
    - Open vs. Close → ask for clarification
    - Long vs. Short → ask for clarification
 
-6. **After every WRITE** → verify with a READ (query order status, check pending orders).
+6. **After every WRITE** → verify with one targeted READ when possible (query order status, check the affected pending order, or inspect the updated position).
 
 7. **Batch limits**: place orders max 5, cancel orders max 50.
 
@@ -475,7 +482,7 @@ Observed behavior during testing: `instType=SWAP` without `instId` returns `The 
 2. **`cancel-all` and `cancel-trigger-all`** require `ProductGroup` (`Swap` vs `SwapU`) and margin/position mode flags.
 3. **Trigger order `triggerPxType`**: defaults to `last` but can be `index` or `mark` — clarify with user for precision.
 4. **`closePosId`** in trigger orders: used to attach a trigger order to close a specific position.
-5. **Rate limits**: Most trading endpoints are 1 req/s per API key.
+5. **Rate limits**: Most trading WRITE endpoints are 1 req/s per API key; prefer batch endpoints for multi-order work.
 6. **Response `sCode`**: `"0"` means success. Non-zero means error — always check `sMsg`.
 
 ---
@@ -494,56 +501,22 @@ Observed behavior during testing: `instType=SWAP` without `instId` returns `The 
 
 ## Example Requests
 
-### Place a limit buy order on BTC-USDT-SWAP (Python)
-
-```python
-import os
-import requests, hmac, hashlib, base64, json
-from datetime import datetime, timezone
-
-API_KEY = os.environ["DC_API_KEY"]
-SECRET_KEY = os.environ["DC_SECRET_KEY"]
-PASSPHRASE = os.environ["DC_PASSPHRASE"]
-BASE = os.environ.get("DC_API_BASE_URL", "https://api.deepcoin.com")
-
-timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-method = "POST"
-path = "/deepcoin/trade/order"
-body = json.dumps({
-    "instId": "BTC-USDT-SWAP",
-    "tdMode": "cross",
-    "side": "buy",
-    "posSide": "long",
-    "ordType": "limit",
-    "sz": "1",
-    "px": "60000"
-})
-
-sign_str = timestamp + method + path + body
-signature = base64.b64encode(
-    hmac.new(SECRET_KEY.encode(), sign_str.encode(), hashlib.sha256).digest()
-).decode()
-
-resp = requests.post(BASE + path, json=json.loads(body), headers={
-    "DC-ACCESS-KEY": API_KEY,
-    "DC-ACCESS-SIGN": signature,
-    "DC-ACCESS-TIMESTAMP": timestamp,
-    "DC-ACCESS-PASSPHRASE": PASSPHRASE,
-    "Content-Type": "application/json"
-})
-print(resp.json())
-```
-
-### Cancel an order (cURL)
+### Place a limit buy order on BTC-USDT-SWAP
 
 ```bash
-BASE_URL="${DC_API_BASE_URL:-https://api.deepcoin.com}"
+deepcoin-cli trade place-order \
+  --inst-id BTC-USDT-SWAP \
+  --td-mode cross \
+  --side buy \
+  --pos-side long \
+  --ord-type limit \
+  --sz 1 \
+  --px 60000 \
+  --json
+```
 
-curl -X POST "$BASE_URL/deepcoin/trade/cancel-order" \
-  -H "Content-Type: application/json" \
-  -H "DC-ACCESS-KEY: $DC_API_KEY" \
-  -H "DC-ACCESS-SIGN: $SIGNATURE" \
-  -H "DC-ACCESS-TIMESTAMP: $TIMESTAMP" \
-  -H "DC-ACCESS-PASSPHRASE: $DC_PASSPHRASE" \
-  -d '{"instId":"BTC-USDT-SWAP","ordId":"123456789"}'
+### Cancel an order
+
+```bash
+deepcoin-cli trade cancel-order --inst-id BTC-USDT-SWAP --ord-id 123456789 --json
 ```

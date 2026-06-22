@@ -16,11 +16,10 @@ metadata:
 
 Create, cancel, pre-check, and query Deepcoin on-chain withdrawals. All endpoints are **authenticated** private REST endpoints.
 
-Use the OpenAPI service exposed by Prism when `server.serverName` is `openapi`. This skill covers the v1 asset withdrawal paths only:
+## CLI Execution
 
-```text
-/deepcoin/asset/...
-```
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/withdrawal-commands.md`](references/withdrawal-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
 ## Performance and Rate Limits
 
@@ -72,9 +71,10 @@ Every request must include these headers:
 3. For cancel:
    - Query the withdrawal first when wdId state/canCancel is unknown.
    - Present a cancellation summary and wait for explicit user confirmation.
-   - Submit POST cancel-withdrawal once, then verify with withdrawal-status.
+   - Run `deepcoin-cli withdrawal cancel` once, then verify with `deepcoin-cli withdrawal status`.
 4. For read-only queries:
-   - Use the narrowest endpoint; use withdraw-config for pre-withdrawal checks.
+   - Use the narrowest CLI command; use `deepcoin-cli withdrawal config` for pre-withdrawal checks.
+5. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command.
 ```
 
 ## Endpoint Reference

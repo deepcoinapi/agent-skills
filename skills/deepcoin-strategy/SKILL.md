@@ -4,7 +4,7 @@ description: "Use this skill when the user asks about: Deepcoin DSL strategy ord
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: "https://api.deepcoin.com"
   openclaw:
     primaryEnv: DC_API_KEY
@@ -16,11 +16,17 @@ metadata:
 
 Create and backtest automated trading strategies on Deepcoin using a DSL (Domain Specific Language) that supports technical indicators and conditional entry/exit logic. All endpoints are **authenticated**.
 
-## Default Rate Limit
+## CLI Execution
 
-Unless Deepcoin documents a stricter rule for a specific strategy endpoint, default to **1 request per second** for each endpoint group in this skill.
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/strategy-commands.md`](references/strategy-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs. Creating or editing DSL JSON files is allowed when the user asks for a strategy artifact.
 
-- Run repeated backtests sequentially unless the upstream contract explicitly allows higher concurrency.
+## Performance and Rate Limits
+
+Keep live deployment conservative, but avoid unnecessary backtest loops.
+
+- Run only the backtests needed to answer the user's request; do not auto-sweep parameter grids unless asked.
+- Use bounded concurrency for independent backtests only if endpoint limits permit it.
 - Serialize live DSL trigger-order submissions by default.
 - On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than replaying the full batch immediately.
 
@@ -55,10 +61,11 @@ Every request must include these headers:
 ```
 1. Understand the user's strategy intent (indicators, entry/exit logic, risk)
 2. Build the DSL JSON structure
-3. Run a backtest first to validate the strategy
+3. Run `deepcoin-cli strategy backtest` when the user requests validation, comparison, or live deployment preparation
 4. Review backtest results with user
-5. If user confirms → deploy as a live DSL trigger order at the default 1 request per second pace unless stricter docs say otherwise
-6. ALWAYS backtest before deploying live
+5. If user confirms → deploy with `deepcoin-cli strategy dsl-trigger-order`
+6. Always backtest before deploying live, but do not require a backtest for pure DSL drafting or explanation
+7. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
 ```
 
 ---
@@ -250,7 +257,7 @@ Observed limitation: live deployment appears to have the same undocumented size-
 
 ## Safety Rules
 
-1. **Always backtest before deploying live.** Present backtest results and get explicit user confirmation.
+1. **Always backtest before deploying live.** Present backtest results and get explicit user confirmation. For pure drafting or explanation, do not force a backtest.
 2. **DSL trigger orders execute automatically.** Make the user aware that once deployed, trades happen without manual intervention.
 3. **Validate indicator parameters** — e.g., BOLL period should be reasonable (typically 10–50), RSI period typically 14.
 4. **Risk parameters are critical** — stop_loss and take_profit percentages directly affect capital at risk.

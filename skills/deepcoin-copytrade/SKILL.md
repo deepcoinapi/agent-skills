@@ -4,7 +4,7 @@ description: "Use this skill when the user asks about: Deepcoin copy trading, be
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: "https://api.deepcoin.com"
   openclaw:
     primaryEnv: DC_API_KEY
@@ -16,11 +16,16 @@ metadata:
 
 Manage copy trading features on Deepcoin — leader settings, follower management, supported contracts, positions, and profit tracking. All endpoints are **authenticated**.
 
-## Default Rate Limit
+## CLI Execution
 
-Unless Deepcoin documents a stricter rule for a specific copy-trading endpoint, default to **1 request per second** for each endpoint group in this skill.
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/copytrade-commands.md`](references/copytrade-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
-- Queue follower, position, and profit queries instead of firing parallel bursts.
+## Performance and Rate Limits
+
+Prefer targeted copy-trading reads and avoid broad sweeps by default.
+
+- For independent read-only follower, position, and profit queries, use bounded concurrency when endpoint limits permit it.
 - Serialize WRITE operations such as leader settings, contract updates, and position-type changes.
 - On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than replaying the whole batch immediately.
 
@@ -62,9 +67,10 @@ Every request must include these headers:
 ```
 1. Identify intent: configure leader? check followers? view positions? profit?
 2. For WRITE operations → present summary → confirm with user
-3. Build authenticated request
-4. Execute and present results at the default 1 request per second pace unless stricter docs say otherwise
-5. After WRITE → verify with corresponding READ
+3. Select the correct command from references/copytrade-commands.md
+4. Run the matching deepcoin-cli command; the CLI handles authentication and signing
+5. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+6. After WRITE → verify with one corresponding READ command
 ```
 
 ---

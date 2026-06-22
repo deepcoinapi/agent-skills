@@ -4,7 +4,7 @@ description: "Use this skill when the user asks for: price of any crypto asset o
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: "https://api.deepcoin.com"
 ---
 
@@ -12,13 +12,19 @@ metadata:
 
 Retrieve public market data from Deepcoin via REST APIs and public WebSocket channels. All endpoints in this skill are **unauthenticated** — no API key required.
 
-## Default Rate Limit
+## CLI Execution
 
-Unless Deepcoin documents a stricter rule for a specific market-data endpoint, default to **1 request per second** for each endpoint group in this skill.
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/market-commands.md`](references/market-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
-- Do not fan out unbounded parallel requests for many symbols.
-- Prefer endpoints that can return multiple instruments in one call, such as ticker or funding snapshots, before looping over single-instrument queries.
-- When the user requests many symbols, queue REST calls and explain that the skill is using the default 1 request per second policy.
+## Performance and Rate Limits
+
+Use the public market-data fast path by default.
+
+- Market-data endpoints are typically limited to **5 requests per second per IP**; stay at or below that unless endpoint docs say otherwise.
+- Prefer endpoints that return multiple instruments in one call, such as ticker or funding snapshots, before looping over single-instrument queries.
+- For independent REST reads, use bounded concurrency up to the documented limit instead of serial 1-second sleeps.
+- Do not add preflight calls such as server time or instruments unless the user asked for them or they are required for the requested result.
 - On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than immediately replaying the full batch.
 
 ## Compliance Disclaimer
@@ -57,11 +63,10 @@ Market data returned by these APIs is raw exchange data. It is **not** financial
 
 ```
 1. Identify user intent (price? depth? candles? streaming?)
-2. Select the correct endpoint from the index above
-3. Build the request with required parameters
-4. If multiple REST calls are needed, queue them at the default 1 request per second rate unless stricter docs say otherwise
-5. Return a minimal, runnable code snippet (Python / JS / cURL)
-6. Explain what the response fields mean if the user is unfamiliar
+2. Select the correct command from references/market-commands.md
+3. Run the matching deepcoin-cli command directly; add --json only when raw output is needed
+4. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+5. Explain what the response fields mean if the user is unfamiliar
 ```
 
 ---
@@ -291,48 +296,21 @@ K-line periods: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `12h`, `1d`, `1w`, `1o`, `
 
 ## Example Requests
 
-### Get BTC-USDT spot ticker (cURL)
+### Get BTC-USDT spot ticker
 
 ```bash
-BASE_URL="${DC_API_BASE_URL:-https://api.deepcoin.com}"
-
-curl "$BASE_URL/deepcoin/market/tickers?instType=SPOT&uly=BTC-USDT"
+deepcoin-cli market ticker BTC-USDT --json
 ```
 
-### Get 1-hour K-lines for BTC-USDT-SWAP (Python)
+### Get 1-hour K-lines for BTC-USDT-SWAP
 
-```python
-import os
-import requests
-
-base_url = os.environ.get("DC_API_BASE_URL", "https://api.deepcoin.com")
-
-resp = requests.get(f"{base_url}/deepcoin/market/candles", params={
-    "instId": "BTC-USDT-SWAP",
-    "bar": "1H",
-    "limit": 100
-})
-candles = resp.json()["data"]
+```bash
+deepcoin-cli market candles BTC-USDT-SWAP --bar 1H --limit 100 --json
 ```
 
-### Subscribe to real-time trades via WebSocket (Python)
+### Subscribe to real-time trades via WebSocket
 
-```python
-import websockets, json, asyncio
-
-async def stream():
-    uri = "wss://stream.deepcoin.com/streamlet/trade/public/swap?platform=api"
-    async with websockets.connect(uri) as ws:
-        await ws.send(json.dumps({
-            "action": "sub",
-            "topic": "trade",
-            "instId": "BTC-USDT-SWAP",
-            "version": "v2"
-        }))
-        async for msg in ws:
-            if msg == "pong":
-                continue
-            print(json.loads(msg))
-
-asyncio.run(stream())
+```text
+Current CLI gap: deepcoin-cli does not expose public WebSocket streaming commands yet.
+Report the missing command instead of writing a temporary WebSocket client.
 ```

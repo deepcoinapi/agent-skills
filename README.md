@@ -13,6 +13,17 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this sk
 - manage copy trading settings, followers, contracts, positions, and profit records
 - design DSL strategies, run backtests, and prepare strategy deployment
 
+## CLI-Backed Execution Model
+
+These skills are instruction and routing layers. Execution must go through `deepcoin-cli`, not ad hoc scripts.
+
+- Each skill provides stable command references under `skills/<skill>/references/*-commands.md`.
+- Agents must run `deepcoin-cli ...` commands from those references.
+- Agents must not temporarily assemble Python, JavaScript, shell, cURL-signing, or custom HTTP clients to call Deepcoin APIs.
+- If a needed API is missing from the CLI, report the missing CLI command instead of improvising.
+
+Preflight and environment rules are centralized in [`skills/_shared/deepcoin-cli.md`](skills/_shared/deepcoin-cli.md).
+
 ## Skills
 
 | Skill | Description | Auth Required |
@@ -30,16 +41,24 @@ All of XiaoD's capabilities are concentrated in Deepcoin skills. Through this sk
 skills/
   deepcoin-market/
     SKILL.md
+    references/market-commands.md
   deepcoin-trade/
     SKILL.md
+    references/trade-commands.md
   deepcoin-portfolio/
     SKILL.md
+    references/portfolio-commands.md
   deepcoin-withdrawal/
     SKILL.md
+    references/withdrawal-commands.md
   deepcoin-copytrade/
     SKILL.md
+    references/copytrade-commands.md
   deepcoin-strategy/
     SKILL.md
+    references/strategy-commands.md
+  _shared/
+    deepcoin-cli.md
 ```
 
 ## Skill Routing
@@ -60,25 +79,27 @@ Users can pass a custom API Base URL.
 - If `base_url` is provided, use that value.
 - If `base_url` is not provided, default to `https://api.deepcoin.com`.
 
-## Default Rate Limit
+## Performance and Rate Limits
 
-Unless an endpoint-specific exchange limit is documented separately, these skills should assume a conservative default of **1 request per second**.
+Use Deepcoin endpoint-specific limits when known, and avoid unnecessary preflight calls.
 
-- Apply the default to each endpoint group being called.
-- Prefer aggregate or batch endpoints instead of high fan-out parallel requests.
+- Public market-data endpoints can use bounded concurrency up to **5 requests per second per IP** unless a stricter endpoint rule applies.
+- Authenticated trading WRITE endpoints should default to **1 request per second per API key** unless an official batch endpoint is used.
+- Prefer aggregate or batch endpoints instead of high fan-out single-item requests.
+- For independent READ requests, use bounded concurrency within documented limits.
 - Serialize WRITE requests by default.
 - If a request returns `429` or another explicit rate-limit signal, back off and retry later instead of replaying the entire batch immediately.
 
 ## Authentication
 
-Authenticated endpoints require four headers:
+Authenticated CLI commands require credentials in environment variables. Prefer the `DEEPCOIN_*` names; `DC_*` aliases are also supported by the CLI.
 
-| Header | Value |
-|--------|-------|
-| `DC-ACCESS-KEY` | API Key |
-| `DC-ACCESS-SIGN` | `Base64(HMAC-SHA256(timestamp + method + requestPath + body, secretKey))` |
-| `DC-ACCESS-TIMESTAMP` | ISO 8601 timestamp |
-| `DC-ACCESS-PASSPHRASE` | Passphrase from API key creation |
+| Purpose | Preferred | Alias |
+|---------|-----------|-------|
+| API key | `DEEPCOIN_API_KEY` | `DC_API_KEY` |
+| Secret key | `DEEPCOIN_SECRET_KEY` | `DC_SECRET_KEY` |
+| Passphrase | `DEEPCOIN_PASSPHRASE` | `DC_PASSPHRASE` |
+| Base URL | `DEEPCOIN_BASE_URL` | `DC_BASE_URL` |
 
 ## Integration
 

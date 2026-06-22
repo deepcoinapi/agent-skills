@@ -4,7 +4,7 @@ description: "Use this skill when the user asks for: Deepcoin account balance, e
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: "https://api.deepcoin.com"
   openclaw:
     primaryEnv: DC_API_KEY
@@ -16,13 +16,18 @@ metadata:
 
 Query account state, positions, balances, leverage, sub-accounts, assets, and transfers on Deepcoin. All endpoints are **authenticated** unless noted otherwise.
 
-## Default Rate Limit
+## CLI Execution
 
-Unless Deepcoin documents a stricter rule for a specific portfolio endpoint, default to **1 request per second** for each endpoint group in this skill.
+Before running commands, follow [`../_shared/deepcoin-cli.md`](../_shared/deepcoin-cli.md).
+Use only the stable CLI commands in [`references/portfolio-commands.md`](references/portfolio-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
 
-- If a read-only workflow needs several account queries, queue them instead of sending an unchecked burst.
-- When the user does not specify spot vs swap and both balances must be queried, run the two requests sequentially under the default pacing.
-- Serialize WRITE operations such as leverage changes or transfers.
+## Performance and Rate Limits
+
+Use the smallest account read that answers the user's question.
+
+- If a read-only workflow needs several independent account queries, prefer bounded concurrency when endpoint limits permit it.
+- When the user does not specify spot vs swap, query only the account type implied by the request; ask a brief clarification or query both only when the user needs a complete account summary.
+- Serialize WRITE operations such as leverage changes or transfers, then verify with one targeted read.
 - On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than hammering the same endpoint.
 
 ---
@@ -104,12 +109,13 @@ Every request must include these headers:
 2. For balance queries:
    - If user explicitly says spot / 现货 → query `GET /deepcoin/account/balances` with `instType=SPOT`
    - If user explicitly says swap / contract / 合约 → query `GET /deepcoin/account/balances` with `instType=SWAP`
-   - If user does **not** specify spot vs swap → query both `instType=SPOT` and `instType=SWAP`, then present both results clearly
+   - If user does **not** specify spot vs swap → infer from the asset or workflow when safe; otherwise ask a brief clarification. Query both only for full account summaries.
 3. Select the correct endpoint from the index
 4. For WRITE operations (leverage, transfers) → present summary → confirm with user
-5. Build authenticated request
-6. Execute and present results at the default 1 request per second pace unless stricter docs say otherwise
-7. After WRITE → verify with a corresponding READ
+5. Select the correct command from references/portfolio-commands.md
+6. Run the matching deepcoin-cli command; the CLI handles authentication and signing
+7. If the requested operation is not exposed by deepcoin-cli, stop and report the missing CLI command
+8. After WRITE → verify with one targeted corresponding READ command
 ```
 
 ---
@@ -362,7 +368,7 @@ Access note: these endpoints may return `403` with code `51028` until Deepcoin s
 3. **Transfer operations are irreversible** — double-check amounts, UIDs, and account types.
 4. **Sub-account transfers**: verify `fromId`/`toId` account type codes carefully.
 5. **Internal transfers to other users** require correct `receiverAccount` / `receiverUID`.
-6. For read-only queries, prefer code generation over live execution.
+6. For read-only queries, call only the endpoint needed for the requested answer; avoid broad account sweeps unless the user asks for a full summary.
 
 ---
 
