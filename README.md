@@ -1,6 +1,6 @@
 # Deepcoin Agent Skills
 
-Plug-and-play AI agent skills for [Deepcoin](https://www.deepcoin.com), enabling XiaoD, Deepcoin's dedicated trading assistant, and other LLM agents to query market data, manage portfolios, trade, run automated strategies, and manage copy trading through the Deepcoin API.
+Plug-and-play AI agent skills for [Deepcoin](https://www.deepcoin.com), enabling XiaoD, Deepcoin's dedicated trading assistant, and other LLM agents to query market data, manage portfolios, trade, run automated strategies, and manage copy trading through `dcli`.
 
 ## Deepcoin Skills Capability Hub
 
@@ -19,8 +19,8 @@ These skills are instruction and routing layers. Execution must go through `dcli
 
 - Each skill provides stable command references under `skills/<skill>/references/*-commands.md`.
 - Agents must run `dcli ...` commands from those references.
-- Agents must not temporarily assemble Python, JavaScript, shell, cURL-signing, or custom HTTP clients to call Deepcoin APIs.
-- If a needed API is missing from the CLI, report the missing CLI command instead of improvising.
+- Agents must not temporarily assemble Python, JavaScript, shell, signing, or custom request clients that bypass `dcli`.
+- If a needed capability is missing from the CLI, report the missing CLI command instead of improvising.
 
 Preflight and environment rules are centralized in [`skills/_shared/dcli.md`](skills/_shared/dcli.md).
 
@@ -28,9 +28,9 @@ Preflight and environment rules are centralized in [`skills/_shared/dcli.md`](sk
 
 | Skill | Description | Auth Required |
 |-------|-------------|:---:|
-| [deepcoin-market](skills/deepcoin-market/SKILL.md) | Public market data: tickers, orderbook, K-lines, trades, funding rate, instruments, WebSocket streams | No |
+| [deepcoin-market](skills/deepcoin-market/SKILL.md) | Public market data: tickers, orderbook, K-lines, trades, funding rate, instruments | No |
 | [deepcoin-trade](skills/deepcoin-trade/SKILL.md) | Order placement, cancellation, amendment, trigger orders, TP/SL, position close, trade fills | Yes |
-| [deepcoin-portfolio](skills/deepcoin-portfolio/SKILL.md) | Account balance, positions, leverage, sub-accounts, asset transfers, deposits, private WebSocket | Yes |
+| [deepcoin-portfolio](skills/deepcoin-portfolio/SKILL.md) | Account balance, positions, leverage, sub-accounts, asset transfers, deposits | Yes |
 | [deepcoin-withdrawal](skills/deepcoin-withdrawal/SKILL.md) | On-chain withdrawal config, whitelist addresses, chains, create, cancel, status, and records | Yes |
 | [deepcoin-copytrade](skills/deepcoin-copytrade/SKILL.md) | Copy trading: leader settings, follower management, positions, profit tracking | Yes |
 | [deepcoin-strategy](skills/deepcoin-strategy/SKILL.md) | DSL strategy orders with technical indicators (BOLL, MA, EMA, KDJ, RSI, WR) and backtesting | Yes |
@@ -61,6 +61,35 @@ skills/
     dcli.md
 ```
 
+## Skill Zip Packages
+
+The repository can provide one zip package per skill. Each package contains the skill's `SKILL.md` and its `references/` directory only.
+
+```bash
+bash scripts/package-skills.sh
+ls dist/deepcoin-*.zip
+```
+
+Generated packages:
+
+```text
+dist/deepcoin-market.zip
+dist/deepcoin-trade.zip
+dist/deepcoin-portfolio.zip
+dist/deepcoin-withdrawal.zip
+dist/deepcoin-copytrade.zip
+dist/deepcoin-strategy.zip
+```
+
+Example contents:
+
+```text
+SKILL.md
+references/portfolio-commands.md
+```
+
+GitHub Actions also builds these packages on pull requests, pushes to `main`, manual workflow runs, and `v*` tags. Tagged releases upload the zip files as release assets.
+
 ## Skill Routing
 
 Each skill defines clear boundaries in its `description` field. An AI agent should use the description to route user requests to the correct skill:
@@ -71,24 +100,6 @@ Each skill defines clear boundaries in its `description` field. An AI agent shou
 - **On-chain withdrawals / withdrawal whitelist / withdrawal status** → `deepcoin-withdrawal`
 - **Copy trading setup / followers / leader positions** → `deepcoin-copytrade`
 - **Automated strategies / backtesting / DSL orders** → `deepcoin-strategy`
-
-## API Base URL
-
-Users can pass a custom API Base URL.
-
-- If `base_url` is provided, use that value.
-- If `base_url` is not provided, default to `https://api.deepcoin.com`.
-
-## Performance and Rate Limits
-
-Use Deepcoin endpoint-specific limits when known, and avoid unnecessary preflight calls.
-
-- Public market-data endpoints can use bounded concurrency up to **5 requests per second per IP** unless a stricter endpoint rule applies.
-- Authenticated trading WRITE endpoints should default to **1 request per second per API key** unless an official batch endpoint is used.
-- Prefer aggregate or batch endpoints instead of high fan-out single-item requests.
-- For independent READ requests, use bounded concurrency within documented limits.
-- Serialize WRITE requests by default.
-- If a request returns `429` or another explicit rate-limit signal, back off and retry later instead of replaying the entire batch immediately.
 
 ## Authentication
 

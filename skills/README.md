@@ -23,20 +23,34 @@ Every skill is backed by stable `dcli` commands.
 
 ## Available Skills
 
-- **[deepcoin-market](deepcoin-market/SKILL.md)** — Public market data (tickers, orderbook, K-lines, trades, funding rate, instruments, WebSocket)
+- **[deepcoin-market](deepcoin-market/SKILL.md)** — Public market data (tickers, orderbook, K-lines, trades, funding rate, instruments)
 - **[deepcoin-trade](deepcoin-trade/SKILL.md)** — Order management (place, cancel, amend, trigger, TP/SL, close positions)
-- **[deepcoin-portfolio](deepcoin-portfolio/SKILL.md)** — Account state (balance, positions, leverage, sub-accounts, assets, transfers, private WebSocket)
+- **[deepcoin-portfolio](deepcoin-portfolio/SKILL.md)** — Account state (balance, positions, leverage, sub-accounts, assets, transfers)
 - **[deepcoin-withdrawal](deepcoin-withdrawal/SKILL.md)** — On-chain withdrawals (pre-check config, whitelist addresses, chains, create, cancel, status, records)
 - **[deepcoin-copytrade](deepcoin-copytrade/SKILL.md)** — Copy trading (leader settings, followers, positions, profit)
 - **[deepcoin-strategy](deepcoin-strategy/SKILL.md)** — Automated strategies (DSL orders with indicators, backtesting)
 
 ## Performance Principles
 
-- Use the narrowest skill and endpoint that answers the user's request.
-- Prefer aggregate and batch endpoints before looping over single-item requests.
-- Use bounded concurrency for independent READ requests within documented endpoint limits.
+- Use the narrowest skill and `dcli` command that answers the user's request.
+- Prefer aggregate and batch CLI commands before looping over single-item reads.
 - Avoid preflight metadata, balance, position, or backtest calls unless they are required for correctness, risk checks, or live execution.
-- Keep WRITE requests serialized unless an official batch endpoint applies, and verify writes with targeted reads.
+- Keep WRITE commands serialized unless a documented batch command applies, and verify writes with targeted reads.
+
+## Skill Zip Packages
+
+Generate one zip file per skill from the repository root:
+
+```bash
+bash scripts/package-skills.sh
+```
+
+Each zip contains only that skill's `SKILL.md` and `references/` directory. For example, `dist/deepcoin-portfolio.zip` contains:
+
+```text
+SKILL.md
+references/portfolio-commands.md
+```
 
 ## Skill Format
 
@@ -50,17 +64,10 @@ license: MIT
 metadata:
   author: Deepcoin
   version: "1.0.2"
-  homepage: "https://api.deepcoin.com"
+  homepage: "https://github.com/deepcoinapi/agent-cli"
 ---
 ```
 
-Followed by: CLI execution rules, endpoint index (with READ/WRITE classification), operation flow, endpoint reference, safety rules, decision workflows, edge cases, scope & boundaries, and examples.
+Followed by: CLI execution rules, command index with READ/WRITE classification, operation flow, command reference, safety rules, decision workflows, edge cases, scope boundaries, and examples.
 
 Each skill must include a `CLI Execution` section that links to `_shared/dcli.md` and to its command reference file.
-
-## API Base URL Convention
-
-All Deepcoin skills should support a user-provided `base_url`.
-
-- If `base_url` is provided, use it for request construction.
-- If `base_url` is omitted, default to `https://api.deepcoin.com`.

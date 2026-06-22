@@ -1,0 +1,41 @@
+name: Package Skills
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package skill zips
+        run: bash scripts/package-skills.sh
+
+      - name: Verify zip contents
+        run: |
+          set -euo pipefail
+          for zip_file in dist/deepcoin-*.zip; do
+            echo "== $zip_file =="
+            unzip -l "$zip_file"
+            unzip -l "$zip_file" | grep -q "SKILL.md"
+          done
+
+      - name: Upload skill zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepcoin-skills-zips
+          path: dist/*.zip
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
