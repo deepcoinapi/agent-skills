@@ -27,7 +27,7 @@ On-chain withdrawal pre-checks, supported assets, chains, whitelist addresses, r
 
 ## Preflight
 
-Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
+Before running any command, follow [`references/dcli.md`](references/dcli.md).
 
 Use `metadata.version` from this file's frontmatter as the expected skill version. Use only stable CLI commands from [`references/withdrawal-commands.md`](references/withdrawal-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 

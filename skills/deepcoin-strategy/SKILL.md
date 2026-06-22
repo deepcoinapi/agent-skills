@@ -27,7 +27,7 @@ DSL strategy drafting, backtesting, and live DSL trigger-order preparation on De
 
 ## Preflight
 
-Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
+Before running any command, follow [`references/dcli.md`](references/dcli.md).
 
 Use `metadata.version` from this file's frontmatter as the expected skill version. Use only stable CLI commands from [`references/strategy-commands.md`](references/strategy-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts. Creating or editing a strategy DSL JSON file is allowed when the user asks for a strategy artifact.
 

@@ -61,9 +61,9 @@ skills/
     dcli.md
 ```
 
-## Skill Zip Packages
+## Skill Packages
 
-The repository can provide one zip package per skill. Each package contains the skill's `SKILL.md` and its `references/` directory only.
+The repository can provide one zip package per skill. Each package contains the skill's `SKILL.md`, command references, and a packaged copy of the shared `dcli` preflight rules at `references/dcli.md`.
 
 ```bash
 bash scripts/package-skills.sh
@@ -81,11 +81,12 @@ dist/deepcoin-copytrade.zip
 dist/deepcoin-strategy.zip
 ```
 
-Example contents:
+Example regular zip contents:
 
 ```text
 SKILL.md
 references/portfolio-commands.md
+references/dcli.md
 ```
 
 GitHub Actions also builds these packages on pull requests, pushes to `main`, manual workflow runs, and `v*` tags. Tagged releases upload the zip files as release assets.

@@ -27,7 +27,7 @@ Order placement, cancellation, amendments, order queries, trigger orders, TP/SL,
 
 ## Preflight
 
-Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
+Before running any command, follow [`references/dcli.md`](references/dcli.md).
 
 Use `metadata.version` from this file's frontmatter as the expected skill version. Use only stable CLI commands from [`references/trade-commands.md`](references/trade-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 

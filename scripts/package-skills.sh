@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="$ROOT_DIR/skills"
+SHARED_DCLI="$SKILLS_DIR/_shared/dcli.md"
 DIST_DIR="$ROOT_DIR/dist"
 CHECK_ONLY=0
 
@@ -41,15 +42,13 @@ for skill_dir in "$SKILLS_DIR"/deepcoin-*; do
     if [ -d "$skill_dir/references" ]; then
       cp -R "$skill_dir/references" "$package_root/references"
     fi
+    mkdir -p "$package_root/references"
+    cp "$SHARED_DCLI" "$package_root/references/dcli.md"
     cd "$package_root"
     # Normalize timestamps so committed zip files are reproducible.
     touch -t 202001010000 SKILL.md
-    if [ -d references ]; then
-      find references -exec touch -t 202001010000 {} +
-      zip -X -q -r "$tmp_output" SKILL.md references
-    else
-      zip -X -q "$tmp_output" SKILL.md
-    fi
+    find references -exec touch -t 202001010000 {} +
+    zip -X -q -r "$tmp_output" SKILL.md references
   )
 
   if [ "$CHECK_ONLY" -eq 1 ]; then

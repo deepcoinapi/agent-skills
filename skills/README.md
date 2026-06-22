@@ -45,11 +45,12 @@ Generate one zip file per skill from the repository root:
 bash scripts/package-skills.sh
 ```
 
-Each zip contains only that skill's `SKILL.md` and `references/` directory. For example, `dist/deepcoin-portfolio.zip` contains:
+Each zip contains that skill's `SKILL.md`, command references, and a packaged copy of shared `dcli` preflight rules. For example, `dist/deepcoin-portfolio.zip` contains:
 
 ```text
 SKILL.md
 references/portfolio-commands.md
+references/dcli.md
 ```
 
 ## Skill Format
@@ -70,4 +71,4 @@ metadata:
 
 Followed by: CLI execution rules, command index with READ/WRITE classification, operation flow, command reference, safety rules, decision workflows, edge cases, scope boundaries, and examples.
 
-Each skill must include a `CLI Execution` section that links to `_shared/dcli.md` and to its command reference file.
+Each skill must include a `CLI Execution` section that links to `references/dcli.md` and to its command reference file.

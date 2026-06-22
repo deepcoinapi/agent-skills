@@ -23,7 +23,7 @@ Public market data on Deepcoin: tickers, order books, candles, trades, funding r
 
 ## Preflight
 
-Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
+Before running any command, follow [`references/dcli.md`](references/dcli.md).
 
 Use `metadata.version` from this file's frontmatter as the expected skill version. Use only stable CLI commands from [`references/market-commands.md`](references/market-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 
