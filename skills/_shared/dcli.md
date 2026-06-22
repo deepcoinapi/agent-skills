@@ -14,10 +14,16 @@ dcli list-tools
 If `dcli` is missing, install or build the CLI first:
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/deepcoinapi/agent-cli/main/install.sh | sh
+```
+
+Alternative source install when Go is available:
+
+```bash
 go install github.com/deepcoinapi/agent-cli/cmd/dcli@latest
 ```
 
-or from a local checkout:
+Or from a local checkout:
 
 ```bash
 cd /path/to/agent-cli

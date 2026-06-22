@@ -10,11 +10,11 @@ metadata:
     requires:
       bins: ["dcli"]
     install:
-      - id: go
-        kind: go
-        package: "github.com/deepcoinapi/agent-cli/cmd/dcli@latest"
+      - id: shell
+        kind: shell
+        command: "curl -fsSL https://raw.githubusercontent.com/deepcoinapi/agent-cli/main/install.sh | sh"
         bins: ["dcli"]
-        label: "Install Deepcoin CLI"
+        label: "Install dcli"
 ---
 
 # Deepcoin Market Skill
