@@ -56,4 +56,4 @@ Allowed execution forms:
 - simple shell wrappers around one CLI command, such as setting environment variables or piping `--json` output to `jq`
 - reading a user-provided JSON file for flags that explicitly support `@file`, such as strategy DSL files
 
-If the needed API is not available as a CLI command, stop and report the missing command instead of improvising a custom API client.
+If the needed capability is not available as a `dcli` command, stop and report the missing command instead of improvising another client.

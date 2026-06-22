@@ -179,7 +179,7 @@ Add a note in your project's `AGENTS.md`:
 ```markdown
 ## Deepcoin Trading Skills
 
-This project includes Deepcoin API skills in `.agents/skills/`.
+This project includes Deepcoin CLI-backed skills in `.agents/skills/`.
 Skills are auto-discovered. Required environment variables:
 
 - DC_API_KEY
@@ -256,7 +256,7 @@ Authenticated skills (trade, portfolio, copytrade, strategy) require:
 
 | Variable | Description |
 |----------|-------------|
-| `DC_API_KEY` | Your Deepcoin API Key |
+| `DC_API_KEY` | Your Deepcoin key |
 | `DC_SECRET_KEY` | Your Deepcoin Secret Key |
 | `DC_PASSPHRASE` | Passphrase set when creating the API key |
 

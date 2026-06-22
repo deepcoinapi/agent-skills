@@ -16,7 +16,7 @@ Use for:
 - candles and K-lines
 - funding rate
 - instrument metadata
-- public WebSocket market streams
+- market connectivity checks
 
 Do not use for:
 
@@ -125,7 +125,7 @@ When the request spans more than one skill, use this order:
 
 - Prefer implicit routing when the intent is unambiguous.
 - If two skills overlap, choose the read-only skill first.
-- When a selected Deepcoin skill needs to execute, run the matching `dcli ...` command from the skill's command reference. Do not call Deepcoin APIs through ad hoc scripts.
+- When a selected Deepcoin skill needs to execute, run the matching `dcli ...` command from the skill's command reference. Do not bypass `dcli` with ad hoc scripts.
 - Check `dcli` only when execution is needed. If missing, install it with `curl -fsSL https://raw.githubusercontent.com/deepcoinapi/agent-cli/main/install.sh | sh`, then use `export PATH="$HOME/.local/bin:$PATH"` before running `dcli`.
 - If a write step depends on unknown instrument constraints, query market metadata first; skip this extra call when valid constraints are already available in context.
 - If a write step depends on available balance or positions, query portfolio state first; skip this extra call when the user only asks for a draft, explanation, or non-executed parameter template.
@@ -137,4 +137,4 @@ If the ideal skill is unavailable:
 
 1. State which capability is missing.
 2. Provide the best safe fallback.
-3. Do not fabricate hidden tools or endpoints.
+3. Do not fabricate hidden tools or command surfaces.

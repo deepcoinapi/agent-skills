@@ -18,7 +18,7 @@ Every skill is backed by stable `dcli` commands.
 
 - Shared preflight and credential rules: [`_shared/dcli.md`](_shared/dcli.md)
 - Per-skill command references: `deepcoin-*/references/*-commands.md`
-- Agents should call `dcli ...` directly and should not write custom API request/signing scripts.
+- Agents should call `dcli ...` directly and should not write scripts that bypass `dcli`.
 - Missing command coverage should be reported as a CLI gap.
 
 ## Available Skills

@@ -24,9 +24,19 @@ jobs:
           set -euo pipefail
           for zip_file in dist/deepcoin-*.zip; do
             echo "== $zip_file =="
-            unzip -l "$zip_file"
-            unzip -l "$zip_file" | grep -q "SKILL.md"
+            unzip -Z1 "$zip_file" | tee /tmp/zip-list.txt
+            grep -qx "SKILL.md" /tmp/zip-list.txt
+            grep -qx "references/" /tmp/zip-list.txt
+            if grep -Evqx "SKILL.md|references/|references/[^/]+\\.md" /tmp/zip-list.txt; then
+              echo "$zip_file contains files outside SKILL.md and references/*.md" >&2
+              exit 1
+            fi
           done
+
+      - name: Verify committed zips are current
+        run: |
+          set -euo pipefail
+          bash scripts/package-skills.sh --check
 
       - name: Upload skill zips
         uses: actions/upload-artifact@v4
