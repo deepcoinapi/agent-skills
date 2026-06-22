@@ -1,6 +1,6 @@
 # Deepcoin Withdrawal CLI Commands
 
-All commands require API credentials. Confirm with the user before `create` or `cancel`.
+All commands require Deepcoin credentials. Confirm with the user before `create` or `cancel`. Use `dcli withdrawal <command> --help` when a flag value is unclear.
 
 ## Read / Pre-Check
 
@@ -13,6 +13,14 @@ dcli withdrawal records [--coin <ccy>] [--ccy <ccy>] [--chain <chain>] [--tx-has
 dcli withdrawal status --wd-id <id> [--ccy <ccy>]
 ```
 
+Before create, run:
+
+```bash
+dcli withdrawal config --ccy <ccy> --include-addresses true
+dcli withdrawal addresses --ccy <ccy>
+dcli withdrawal chains --ccy <ccy>
+```
+
 ## Writes
 
 ```bash
@@ -20,4 +28,17 @@ dcli withdrawal create --ccy <ccy> --chain <chain> --amt <amount> --address-id <
 dcli withdrawal cancel --wd-id <id> [--ccy <ccy>] [--client-id <id>]
 ```
 
-Before `create`, run `config --ccy <ccy> --include-addresses true` unless equivalent validated config is already available in context.
+Notes:
+
+- `--address-id` is required for create.
+- `--account-types` accepts at most one of `funding`, `spot`, or `swap`.
+- Confirm memo/tag requirements from config before create.
+- Never replay create/cancel automatically after uncertain errors.
+
+## Verification
+
+```bash
+dcli withdrawal status --wd-id <id> --ccy <ccy>
+dcli withdrawal records --coin <ccy> --page 1 --size 20
+dcli withdrawal records --wd-id <id> [--ccy <ccy>]
+```

@@ -1,6 +1,6 @@
 # Deepcoin Trade CLI Commands
 
-All commands require API credentials. Confirm with the user before every WRITE command.
+All commands require Deepcoin credentials. Confirm with the user before every WRITE command. Use `dcli trade <command> --help` when a flag value is unclear.
 
 ## Order Writes
 
@@ -14,6 +14,13 @@ dcli trade amend-order --order-id <id> [--price <px>] [--volume <size>]
 dcli trade amend-order-sltp --order-id <id> [--tp-trigger-px <px>] [--sl-trigger-px <px>]
 ```
 
+Notes:
+
+- `--px` is required for limit and post-only orders.
+- `batch-orders` supports up to 5 orders.
+- `batch-cancel` supports up to 50 order IDs.
+- `cancel-all` is broad; confirm filters before execution.
+
 ## Order Reads
 
 ```bash
@@ -25,14 +32,21 @@ dcli trade batch-query --orders '<json-array>'
 dcli trade fills --inst-type <SPOT|SWAP> [--inst-id <id>] [--ord-id <id>] [--limit <n>] [--json]
 ```
 
-## Trigger, TP/SL, Close, Trace
+Use `--json` for ID extraction and verification workflows.
+
+## Trigger Orders
 
 ```bash
 dcli trade trigger-order --inst-id <id> --product-group <Swap|SwapU> --side <buy|sell> --sz <size> --trigger-price <px> [--trigger-px-type <last|index|mark>] [--order-type <market|limit>] [--price <px>] [--pos-side <long|short>] [--td-mode <isolated|cross>] [--cross-margin <0|1>] [--mrg-position <merge|split>] [--tp-trigger-px <px>] [--sl-trigger-px <px>] [--json]
 dcli trade cancel-trigger --inst-id <id> --ord-id <id>
-dcli trade cancel-all-triggers --product-group <Swap|SwapU> [flags]
+dcli trade cancel-all-triggers --product-group <Swap|SwapU> [--inst-id <id>] [--cross-margin <-1|0|1>] [--merge-mode <-1|0|1>]
 dcli trade trigger-pending --inst-type <SPOT|SWAP> [--inst-id <id>] [--limit <n>] [--json]
 dcli trade trigger-history --inst-type <SPOT|SWAP> [--inst-id <id>] [--limit <n>] [--json]
+```
+
+## Position TP/SL, Close, Trace
+
+```bash
 dcli trade set-position-sltp --inst-type <SPOT|SWAP> --inst-id <id> --pos-side <long|short> [--pos-id <id>] [--td-mode <isolated|cross>] [--mrg-position <merge|split>] [--tp-trigger-px <px>] [--tp-trigger-px-type <type>] [--tp-ord-px <px|-1>] [--sl-trigger-px <px>] [--sl-trigger-px-type <type>] [--sl-ord-px <px|-1>] [--sz <size>]
 dcli trade modify-position-sltp --ord-id <id> --inst-id <id> [--tp-trigger-px <px>] [--sl-trigger-px <px>]
 dcli trade cancel-position-sltp --ord-id <id>
@@ -40,4 +54,10 @@ dcli trade close-position --inst-id <id> --product-group <Swap|SwapU> --position
 dcli trade batch-close-position --inst-id <id> --product-group <Swap|SwapU>
 dcli trade trace-order --inst-id <id> --retrace-point <value> --trigger-price <px> --pos-side <long|short>
 dcli trade trace-orders [--json]
+```
+
+Verify after position-changing writes with:
+
+```bash
+dcli account positions --inst-type SWAP --inst-id <id> --json
 ```
