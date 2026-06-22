@@ -5,7 +5,7 @@ license: MIT
 metadata:
   author: Deepcoin
   version: "1.0.2"
-  homepage: "https://api.deepcoin.com"
+  homepage: "https://github.com/deepcoinapi/agent-cli"
   agent:
     requires:
       bins: ["dcli"]
@@ -21,511 +21,112 @@ metadata:
       env: ["DC_API_KEY", "DC_SECRET_KEY", "DC_PASSPHRASE"]
 ---
 
-# Deepcoin Trade Skill
+# Deepcoin Trade CLI
 
-Place, manage, and query orders on Deepcoin. All endpoints in this skill are **authenticated** and require request signing.
+Order placement, cancellation, amendment, order queries, trigger orders, TP/SL, close-position workflows, fills, and trace orders on Deepcoin. Requires Deepcoin credentials.
 
-## CLI Execution
+## Preflight
 
-Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
-Use only the stable CLI commands in [`references/trade-commands.md`](references/trade-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
+Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 
-## Performance and Rate Limits
+Use only the stable CLI commands in [`references/trade-commands.md`](references/trade-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 
-Keep writes safe, but avoid unnecessary read latency.
+## Credential Check
 
-- Trading WRITE endpoints are typically limited to **1 request per second per API key**; serialize non-batch writes unless official docs say otherwise.
-- Prefer official batch endpoints when the user wants to place, cancel, or query several orders.
-- For independent READ-only order queries, use batch query endpoints or bounded concurrency when endpoint limits permit it.
-- For READ-after-WRITE verification, perform one targeted verification read; avoid aggressive polling unless the user explicitly asks to wait for a fill.
-- On HTTP `429` or equivalent rate-limit errors, back off and retry carefully rather than replaying the whole write batch.
+Authenticated commands require Deepcoin credentials in environment variables. Prefer `DEEPCOIN_API_KEY`, `DEEPCOIN_SECRET_KEY`, and `DEEPCOIN_PASSPHRASE`; `DC_*` aliases are supported.
 
----
+Never ask the user to paste credentials into chat.
 
-## Authentication
+## Skill Routing
 
-Every request must include these headers:
+- Market prices, candles, order books, funding, instruments -> `deepcoin-market`
+- Balances, positions, leverage, transfers, sub-accounts -> `deepcoin-portfolio`
+- On-chain withdrawal config, whitelist, create/cancel/status -> `deepcoin-withdrawal`
+- Copy trading settings, followers, leader positions -> `deepcoin-copytrade`
+- Strategy DSL and backtests -> `deepcoin-strategy`
+- Orders, triggers, TP/SL, closes, fills -> this skill
 
-| Header | Value |
-|--------|-------|
-| `DC-ACCESS-KEY` | Your API Key |
-| `DC-ACCESS-SIGN` | `Base64(HMAC-SHA256(timestamp + method + requestPath + body, secretKey))` |
-| `DC-ACCESS-TIMESTAMP` | ISO 8601 (e.g. `2020-12-08T09:08:57.715Z`) |
-| `DC-ACCESS-PASSPHRASE` | Passphrase set when creating the API key |
+## Quickstart
 
-**NEVER** accept API credentials in chat. Use environment variables or config files.
+```bash
+# Pending orders
+dcli trade pending-orders --inst-id BTC-USDT-SWAP --json
 
----
+# Order history
+dcli trade order-history --inst-type SWAP --limit 20 --json
 
-## API Endpoint Index
+# Fills
+dcli trade fills --inst-type SWAP --inst-id BTC-USDT-SWAP --json
 
-| # | Endpoint | Method | Path | Type |
-|---|----------|--------|------|------|
-| 1 | Place order | POST | `/deepcoin/trade/order` | **WRITE** |
-| 2 | Batch place orders | POST | `/deepcoin/trade/batch-orders` | **WRITE** |
-| 3 | Cancel order | POST | `/deepcoin/trade/cancel-order` | **WRITE** |
-| 4 | Batch cancel orders | POST | `/deepcoin/trade/batch-cancel-order` | **WRITE** |
-| 5 | Cancel all orders | POST | `/deepcoin/trade/swap/cancel-all` | **WRITE** |
-| 6 | Amend order | POST | `/deepcoin/trade/replace-order` | **WRITE** |
-| 7 | Amend order TP/SL | POST | `/deepcoin/trade/replace-order-sltp` | **WRITE** |
-| 8 | Get order by ID | GET | `/deepcoin/trade/orderByID` | READ |
-| 9 | Get historical order by ID | GET | `/deepcoin/trade/finishOrderByID` | READ |
-| 10 | Pending orders | GET | `/deepcoin/trade/v2/orders-pending` | READ |
-| 11 | Order history | GET | `/deepcoin/trade/orders-history` | READ |
-| 12 | Batch order query | POST | `/deepcoin/trade/batch-order-query` | READ |
-| 13 | Trade fills | GET | `/deepcoin/trade/fills` | READ |
-| 14 | Trigger order | POST | `/deepcoin/trade/trigger-order` | **WRITE** |
-| 15 | Cancel trigger order | POST | `/deepcoin/trade/cancel-trigger-order` | **WRITE** |
-| 16 | Cancel all trigger orders | POST | `/deepcoin/trade/swap/cancel-trigger-all` | **WRITE** |
-| 17 | Pending trigger orders | GET | `/deepcoin/trade/trigger-orders-pending` | READ |
-| 18 | Trigger order history | GET | `/deepcoin/trade/trigger-orders-history` | READ |
-| 19 | Set position TP/SL | POST | `/deepcoin/trade/set-position-sltp` | **WRITE** |
-| 20 | Modify position TP/SL | POST | `/deepcoin/trade/modify-position-sltp` | **WRITE** |
-| 21 | Cancel position TP/SL | POST | `/deepcoin/trade/cancel-position-sltp` | **WRITE** |
-| 22 | Close position by IDs | POST | `/deepcoin/trade/close-position-by-ids` | **WRITE** |
-| 23 | Batch close position | POST | `/deepcoin/trade/batch-close-position` | **WRITE** |
-| 24 | Trace order | POST | `/deepcoin/trade/trace-order` | **WRITE** |
-| 25 | Pending trace orders | GET | `/deepcoin/trade/trace-order-list` | READ |
+# Place a limit order after explicit confirmation
+dcli trade place-order --inst-id BTC-USDT-SWAP --td-mode isolated --side buy --ord-type limit --sz 1 --px 60000 --pos-side long --mrg-position merge --json
+```
 
----
+## Command Index
+
+### Read Commands
+
+| # | Command | Description |
+|---|---|---|
+| 1 | `dcli trade get-order --inst-id <id> --ord-id <id>` | Active or recent order |
+| 2 | `dcli trade get-history-order --inst-id <id> --ord-id <id>` | Historical order |
+| 3 | `dcli trade pending-orders [--inst-id <id>] [--limit <n>] [--json]` | Open orders |
+| 4 | `dcli trade order-history --inst-type <SPOT\|SWAP> [--inst-id <id>] [--state <canceled\|filled>] [--ord-type <type>] [--limit <n>] [--json]` | Order history |
+| 5 | `dcli trade batch-query --orders '<json-array>'` | Query several orders |
+| 6 | `dcli trade fills --inst-type <SPOT\|SWAP> [--inst-id <id>] [--ord-id <id>] [--limit <n>] [--json]` | Trade fills |
+| 7 | `dcli trade trigger-pending --inst-type <SPOT\|SWAP> [--inst-id <id>] [--limit <n>] [--json]` | Pending trigger orders |
+| 8 | `dcli trade trigger-history --inst-type <SPOT\|SWAP> [--inst-id <id>] [--limit <n>] [--json]` | Trigger order history |
+| 9 | `dcli trade trace-orders [--json]` | Pending trace orders |
+
+### Write Commands
+
+Confirm with the user before running any write command.
+
+| # | Command | Description |
+|---|---|---|
+| 10 | `dcli trade place-order --inst-id <id> --td-mode <mode> --side <buy\|sell> --ord-type <type> --sz <size> [flags] [--json]` | Place order |
+| 11 | `dcli trade batch-orders --orders '<json-array>'` | Place up to 5 orders |
+| 12 | `dcli trade cancel-order --inst-id <id> --ord-id <id> [--json]` | Cancel order |
+| 13 | `dcli trade batch-cancel --order-ids '<id,id>'` | Cancel several orders |
+| 14 | `dcli trade cancel-all --product-group <Swap\|SwapU> [--inst-id <id>] [--cross-margin <0\|1>] [--merge-mode <0\|1>]` | Cancel all matching orders |
+| 15 | `dcli trade amend-order --order-id <id> [--price <px>] [--volume <size>]` | Amend order |
+| 16 | `dcli trade amend-order-sltp --order-id <id> [--tp-trigger-px <px>] [--sl-trigger-px <px>]` | Amend order TP/SL |
+| 17 | `dcli trade trigger-order --inst-id <id> --product-group <Swap\|SwapU> --side <buy\|sell> --sz <size> --trigger-price <px> [flags]` | Place trigger order |
+| 18 | `dcli trade cancel-trigger --inst-id <id> --ord-id <id>` | Cancel trigger order |
+| 19 | `dcli trade cancel-all-triggers --product-group <Swap\|SwapU> [flags]` | Cancel all matching trigger orders |
+| 20 | `dcli trade set-position-sltp --inst-type <SPOT\|SWAP> --inst-id <id> --pos-side <long\|short> [flags]` | Set position TP/SL |
+| 21 | `dcli trade modify-position-sltp --ord-id <id> --inst-id <id> [--tp-trigger-px <px>] [--sl-trigger-px <px>]` | Modify position TP/SL |
+| 22 | `dcli trade cancel-position-sltp --ord-id <id>` | Cancel position TP/SL |
+| 23 | `dcli trade close-position --inst-id <id> --product-group <Swap\|SwapU> --position-ids '<id,id>'` | Close positions by ID |
+| 24 | `dcli trade batch-close-position --inst-id <id> --product-group <Swap\|SwapU>` | Close all positions for an instrument |
+| 25 | `dcli trade trace-order --inst-id <id> --retrace-point <value> --trigger-price <px> --pos-side <long\|short>` | Place trace order |
 
 ## Operation Flow
 
-```
-1. Identify intent: place / cancel / amend / query / TP-SL / close
-2. For WRITE operations → build confirmation summary → ask user to confirm
-3. For order placement → fetch instrument info only when constraints are unknown or the requested price/size needs validation
-4. Select the correct command from references/trade-commands.md
-5. Run the matching dcli command; the CLI handles authentication and signing
-6. If the requested operation is not exposed by dcli, stop and report the missing CLI command
-7. After any WRITE → verify with one targeted READ command (e.g. query the affected order)
-```
-
----
-
-## Endpoint Reference
-
-### 1. Place Order
-
-```
-POST /deepcoin/trade/order
-```
-
-| Param | Required | Values | Description |
-|-------|----------|--------|-------------|
-| instId | Yes | e.g. `BTC-USDT-SWAP` | Instrument ID |
-| tdMode | Yes | `isolated`, `cross`, `cash` | Trade mode (`cash` for spot) |
-| side | Yes | `buy`, `sell` | Order side |
-| ordType | Yes | `market`, `limit`, `post_only`, `ioc` | Order type |
-| sz | Yes | e.g. `1` | Size (contracts for swap, base currency for spot) |
-| px | Conditional | e.g. `30000` | Price (required for limit orders) |
-| posSide | Conditional | `long`, `short` | Required for SWAP; observed behavior also requires it in merge mode |
-| mrgPosition | Conditional | `merge`, `split` | Required for SWAP |
-| tpTriggerPx | No | | Take-profit trigger price |
-| slTriggerPx | No | | Stop-loss trigger price |
-| clOrdId | No | | Client order ID |
-
-Response: `ordId`, `clOrdId`, `sCode`, `sMsg`.
-
-### 2. Batch Place Orders
-
-```
-POST /deepcoin/trade/batch-orders
-```
-
-Body: `orders` array (max **5** items), each with the same fields as place order.
-For SWAP orders, observed behavior also requires `posSide` even when `mrgPosition=merge`.
-
-### 3. Cancel Order
-
-```
-POST /deepcoin/trade/cancel-order
-```
-
-| Param | Required |
-|-------|----------|
-| instId | Yes |
-| ordId | Yes |
-
-### 4. Batch Cancel Orders
-
-```
-POST /deepcoin/trade/batch-cancel-order
-```
-
-Body: `orderSysIDs` array (max **50** order IDs).
-
-### 5. Cancel All Orders
-
-```
-POST /deepcoin/trade/swap/cancel-all
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| InstrumentID | No | e.g. `BTCUSDT`; omit to cancel across the selected product group |
-| ProductGroup | Yes | `Swap`, `SwapU` |
-| IsCrossMargin | Yes | `0` (isolated), `1` (cross) |
-| IsMergeMode | Yes | `0` (split), `1` (merge) |
-
-### 6. Amend Order
-
-```
-POST /deepcoin/trade/replace-order
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| OrderSysID | Yes | Order ID to amend |
-| price | No | New price |
-| volume | No | New size |
-
-### 7. Amend Order TP/SL
-
-```
-POST /deepcoin/trade/replace-order-sltp
-```
-
-| Param | Required |
-|-------|----------|
-| orderSysID | Yes |
-| tpTriggerPx | No |
-| slTriggerPx | No |
-
-### 8–9. Query Order
-
-```
-GET /deepcoin/trade/orderByID          → active or recent order
-GET /deepcoin/trade/finishOrderByID    → historical / completed order
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | Yes | Instrument ID |
-| ordId | Yes | Order ID |
-
-### 10. Pending Orders
-
-```
-GET /deepcoin/trade/v2/orders-pending
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | No | Filter by instrument |
-| index | Yes | Pagination index; minimum value `1` |
-| limit | No | Max 100, default 30 |
-| ordId | No | Specific order |
-
-### 11. Order History
-
-```
-GET /deepcoin/trade/orders-history
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
-| instId | No | Filter |
-| ordType | No | Filter |
-| state | No | `canceled`, `filled` |
-| after / before | No | Pagination |
-| limit | No | Max 100 |
-
-### 12. Batch Order Query
-
-```
-POST /deepcoin/trade/batch-order-query
-```
-
-Body: `orders` array (max 5), each with `instId` and `ordId` or `clOrdId`.
-
-### 13. Trade Fills
-
-```
-GET /deepcoin/trade/fills
-```
-
-| Param | Required |
-|-------|----------|
-| instType | Yes | `SPOT` or `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
-| instId | No |
-| ordId | No |
-| begin / end | No |
-| limit | No (max 100) |
-
-Response: `tradeId`, `fillPx`, `fillSz`, `side`, `posSide`, `execType`, `fee`, `ts`.
-
-### 14. Trigger Order
-
-```
-POST /deepcoin/trade/trigger-order
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instId | Yes | e.g. `BTC-USDT-SWAP` |
-| productGroup | Yes | `Spot`, `Swap` |
-| sz | Yes | Order size |
-| side | Yes | `buy`, `sell` |
-| triggerPrice | Yes | Trigger price |
-| triggerPxType | No | `last`, `index`, `mark` (default `last`) |
-| orderType | Yes | `limit`, `market` |
-| price | Conditional | Required for limit |
-| posSide | Conditional | `long`, `short` (SWAP only) |
-| tdMode | Yes | `cash`, `cross`, `isolated` |
-| isCrossMargin | No | `0`, `1` |
-| mrgPosition | No | `merge`, `split` |
-| tpTriggerPx | No | TP trigger price |
-| slTriggerPx | No | SL trigger price |
-| closePosId | No | Position ID to close |
-
-### 15–16. Cancel Trigger Orders
-
-```
-POST /deepcoin/trade/cancel-trigger-order
-```
-
-`cancel-trigger-order` params:
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | Yes | Instrument ID |
-| ordId | Yes | Trigger order ID |
-| clOrdId | No | Client order ID; cannot replace `ordId`, which remains required |
-
-```
-
-POST /deepcoin/trade/swap/cancel-trigger-all
-```
-
-`cancel-trigger-all` params:
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| ProductGroup | Yes | `Swap`, `SwapU` |
-| InstrumentID | No | Instrument filter; omit to cancel all |
-| IsCrossMargin | No | `1` = cross, `0` = isolated, `-1` = no filter |
-| IsMergeMode | No | `1` = merge, `0` = split, `-1` = no filter |
-
-### 17–18. Query Trigger Orders
-
-```
-GET /deepcoin/trade/trigger-orders-pending
-GET /deepcoin/trade/trigger-orders-history
-```
-
-| Param | Pending Required | History Required | Description |
-|-------|------------------|------------------|-------------|
-| instType | Yes | Yes | `SPOT`, `SWAP` |
-| instId | Yes | Yes | Instrument ID |
-| orderType | No | No | `limit`, `market` |
-| limit | No | No | Max `100`, default `100` |
-| ordId | No | No | Order ID filter; supported on history endpoint |
-
-### 19–21. Position TP/SL
-
-```
-POST /deepcoin/trade/set-position-sltp      → create new TP/SL
-POST /deepcoin/trade/modify-position-sltp    → modify existing (requires ordId)
-POST /deepcoin/trade/cancel-position-sltp    → cancel (requires ordId)
-```
-
-`set-position-sltp` params:
-
-| Param | Required | Values / Description |
-|-------|----------|----------------------|
-| instType | Yes | `SPOT` or `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
-| instId | Yes | e.g. `BTC-USDT-SWAP` |
-| posSide | No | `long`, `short` |
-| mrgPosition | No | `merge`, `split` |
-| tdMode | No | `cash`, `cross`, `isolated` |
-| posId | No | Position ID |
-| tpTriggerPx | No | Take-profit trigger price |
-| tpTriggerPxType | No | `last`, `index`, `mark` |
-| tpOrdPx | No | Take-profit order price |
-| slTriggerPx | No | Stop-loss trigger price |
-| slTriggerPxType | No | `last`, `index`, `mark` |
-| slOrdPx | No | Stop-loss order price |
-| sz | No | Position size |
-
-Notes:
-- At least one of `tpTriggerPx` or `slTriggerPx` must be provided.
-- When `mrgPosition=split`, `posId` is required.
-- For `SPOT`, `posSide`, `mrgPosition`, `tdMode`, and `posId` do not apply.
-
-`modify-position-sltp` params follow the same core fields, with `instType`, `instId`, and `ordId` all required.
-
-`cancel-position-sltp` params require `instType`, `instId`, and `ordId`.
-
-Trigger price types: `last`, `index`, `mark`.
-
-### 22–23. Close Positions
-
-```
-POST /deepcoin/trade/close-position-by-ids
-```
-
-`close-position-by-ids` params:
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
-| instId | Yes | Instrument ID |
-| positionIds | Yes | Array of position IDs; at least one item |
-
-```
-
-POST /deepcoin/trade/batch-close-position
-```
-
-`batch-close-position` params:
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
-| instId | Yes | Instrument ID |
-
-### 24–25. Trace Orders
-
-```
-POST /deepcoin/trade/trace-order
-```
-
-`trace-order` params:
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | Yes | Instrument ID |
-| retracePoint | Yes | Pullback spread |
-| triggerPrice | Yes | Activation price; `0` cancels, `-1` activates immediately |
-| posSide | Yes | `long`, `short`; `SWAP` only |
-
-Notes:
-- Trace order is supported only in cross margin mode with merged position mode.
-- Positive `triggerPrice` must keep at least 0.1% difference from the latest price.
-
-```
-GET /deepcoin/trade/trace-order-list
-```
-
-`trace-order-list` params:
-
-| Param | Required | Values / Description |
-|-------|----------|----------------------|
-| instType | No | `SPOT` or `SWAP`; optional in docs, but some client flows still send it |
-| instId | Yes | Product ID in official docs; e.g. `BTC-USDT-SWAP` |
-
-Returns: array with `retracePoint`, `triggerPrice`, `breakPrice`, `isTriggered`, `posSide`, `createTime`.
-
-Observed behavior during testing: `instType=SWAP` without `instId` returns `The instId field is required`; `instType=SWAP&instId=BTC-USDT-SWAP` may return `data=[]` when there are no pending trace orders.
-```
-
----
-
-## Safety Rules
-
-1. **WRITE operations require user confirmation.** Before executing any WRITE endpoint, present a summary:
-   - Instrument, side, size, price, order type, leverage, TP/SL if set
-   - Ask the user to confirm before proceeding.
-
-2. **Never fabricate** order IDs, fill data, or execution results.
-
-3. **Fetch instrument metadata only when needed** (`/deepcoin/market/instruments`) to validate `tickSz`, `minSz`, `lotSz`. Skip the extra call when valid metadata is already in context or the user is only asking for a draft that will not be executed.
-
-4. **Preserve field values exactly** as documented: `tdMode`, `side`, `ordType`, `posSide`, `mrgPosition`.
-
-5. **Swap order intent must be explicit.** If the user request is ambiguous between:
-   - Spot vs. Swap → ask for clarification
-   - Open vs. Close → ask for clarification
-   - Long vs. Short → ask for clarification
-
-6. **After every WRITE** → verify with one targeted READ when possible (query order status, check the affected pending order, or inspect the updated position).
-
-7. **Batch limits**: place orders max 5, cancel orders max 50.
-
----
-
-## Decision Workflows
-
-### "I want to buy BTC"
-
-```
-→ Spot or Swap?
-  ├── Spot → tdMode=cash, side=buy, no posSide needed
-  └── Swap → tdMode=cross/isolated
-      ├── Open long → side=buy, posSide=long
-      └── Close short → side=buy, posSide=short
-→ Market or Limit?
-  ├── Market → ordType=market, no px
-  └── Limit → ordType=limit, px required
-→ Any TP/SL? → add tpTriggerPx / slTriggerPx
-→ Confirm with user → execute
-```
-
-### "Set a stop loss on my position"
-
-```
-→ Does user have posId? 
-  ├── Yes → use set-position-sltp with posId
-  └── No → query positions first (deepcoin-portfolio)
-→ Trigger price type? (last/index/mark, default last)
-→ Limit or market SL? → slOrdPx for limit, omit for market
-→ Confirm → execute
-```
-
-### "Cancel my orders"
-
-```
-→ Specific order? → cancel-order with ordId
-→ All orders for an instrument? → cancel-all
-→ All trigger orders? → cancel-trigger-all
-→ Multiple specific orders? → batch-cancel-order
-```
-
----
-
-## Edge Cases & Gotchas
-
-1. **Position mode matters**: In `merge` mode, `posSide` is not used. In `split` mode, `posSide` (long/short) is required for SWAP orders.
-2. **`cancel-all` and `cancel-trigger-all`** require `ProductGroup` (`Swap` vs `SwapU`) and margin/position mode flags.
-3. **Trigger order `triggerPxType`**: defaults to `last` but can be `index` or `mark` — clarify with user for precision.
-4. **`closePosId`** in trigger orders: used to attach a trigger order to close a specific position.
-5. **Rate limits**: Most trading WRITE endpoints are 1 req/s per API key; prefer batch endpoints for multi-order work.
-6. **Response `sCode`**: `"0"` means success. Non-zero means error — always check `sMsg`.
-
----
-
-## Scope & Boundaries
-
-| User Intent | Skill to Use |
-|-------------|-------------|
-| Place / cancel / amend orders, trigger orders, TP/SL, close positions | **deepcoin-trade** (this skill) |
-| Price, ticker, orderbook, candles, funding rate | `deepcoin-market` |
-| Account balance, positions, leverage, assets, transfers | `deepcoin-portfolio` |
-| Copy trading settings, followers, leader positions | `deepcoin-copytrade` |
-| DSL strategy orders, backtesting | `deepcoin-strategy` |
-
----
-
-## Example Requests
-
-### Place a limit buy order on BTC-USDT-SWAP
-
-```bash
-dcli trade place-order \
-  --inst-id BTC-USDT-SWAP \
-  --td-mode cross \
-  --side buy \
-  --pos-side long \
-  --ord-type limit \
-  --sz 1 \
-  --px 60000 \
-  --json
-```
-
-### Cancel an order
-
-```bash
-dcli trade cancel-order --inst-id BTC-USDT-SWAP --ord-id 123456789 --json
-```
+1. Identify intent: query, place, cancel, amend, trigger, TP/SL, close, fills, or trace.
+2. Select the matching command from [`references/trade-commands.md`](references/trade-commands.md).
+3. For read commands, run directly after credential preflight.
+4. For write commands, summarize the exact action and wait for explicit user confirmation.
+5. After a write, verify with the closest read command.
+6. If the requested capability is not available in `dcli`, report the missing CLI command instead of improvising an API call.
+
+## Write Confirmation Rules
+
+Before any write command, summarize:
+
+- operation
+- instrument
+- side and size, when applicable
+- order type and price, when applicable
+- margin mode, position side, and position mode, when applicable
+- affected order or position IDs, when applicable
+- verification command to run afterward
+
+Do not treat vague approval as confirmation for live trading operations.
+
+## Response Rules
+
+- Return the command result first.
+- Keep risk notes concrete and proportional.
+- Use `--json` for machine-readable follow-up work.
+- Use only documented `dcli` commands; do not provide low-level protocol or signing instructions.

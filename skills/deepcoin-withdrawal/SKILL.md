@@ -5,7 +5,7 @@ license: MIT
 metadata:
   author: Deepcoin
   version: "1.0.2"
-  homepage: "https://api.deepcoin.com"
+  homepage: "https://github.com/deepcoinapi/agent-cli"
   agent:
     requires:
       bins: ["dcli"]
@@ -21,208 +21,95 @@ metadata:
       env: ["DC_API_KEY", "DC_SECRET_KEY", "DC_PASSPHRASE"]
 ---
 
-# Deepcoin Withdrawal Skill
+# Deepcoin Withdrawal CLI
 
-Create, cancel, pre-check, and query Deepcoin on-chain withdrawals. All endpoints are **authenticated** private REST endpoints.
+On-chain withdrawal pre-checks, supported assets, chains, whitelist addresses, records, status, create, and cancel workflows on Deepcoin. Requires Deepcoin credentials.
 
-## CLI Execution
+## Preflight
 
-Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
-Use only the stable CLI commands in [`references/withdrawal-commands.md`](references/withdrawal-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
+Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 
-## Performance and Rate Limits
+Use only the stable CLI commands in [`references/withdrawal-commands.md`](references/withdrawal-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 
-Withdrawal endpoints are documented with a **1 request per second** frequency limit. Keep that pace unless a stricter configured limit is known.
+## Credential Check
 
-- Serialize WRITE operations: `withdrawal` and `cancel-withdrawal`.
-- Prefer `withdraw-config` before creating a withdrawal; it aggregates assets, chains, limits, memo requirements, and optional whitelist addresses.
-- For independent READ requests, use the aggregate endpoint first instead of fanning out to assets, chains, and addresses.
-- On HTTP `429` or equivalent rate-limit errors, back off and retry later; never replay a withdrawal write blindly.
+Authenticated commands require Deepcoin credentials in environment variables. Prefer `DEEPCOIN_API_KEY`, `DEEPCOIN_SECRET_KEY`, and `DEEPCOIN_PASSPHRASE`; `DC_*` aliases are supported.
 
-## Authentication
+Never ask the user to paste credentials into chat.
 
-Every request must include these headers:
+## Skill Routing
 
-| Header | Value |
-|--------|-------|
-| `DC-ACCESS-KEY` | Your API Key |
-| `DC-ACCESS-SIGN` | `Base64(HMAC-SHA256(timestamp + method + requestPath + body, secretKey))` |
-| `DC-ACCESS-TIMESTAMP` | ISO 8601 timestamp |
-| `DC-ACCESS-PASSPHRASE` | Passphrase set when creating the API key |
+- Balances, positions, deposits, transfers, sub-accounts -> `deepcoin-portfolio`
+- Orders, triggers, TP/SL, closes, fills -> `deepcoin-trade`
+- Market data -> `deepcoin-market`
+- Copy trading -> `deepcoin-copytrade`
+- Strategy DSL and backtests -> `deepcoin-strategy`
+- Withdrawal config, whitelist, records, create/cancel/status -> this skill
 
-**Never accept or print API credentials in chat.** Use environment variables or local config.
+## Quickstart
 
-## API Endpoint Index
+```bash
+# Withdrawal config and whitelist
+dcli withdrawal config --ccy USDT --include-addresses true
 
-| # | Endpoint | Method | Path | Type |
-|---|----------|--------|------|------|
-| 1 | Create withdrawal | POST | `/deepcoin/asset/withdrawal` | **WRITE** |
-| 2 | Cancel withdrawal | POST | `/deepcoin/asset/cancel-withdrawal` | **WRITE** |
-| 3 | Withdrawal records | GET | `/deepcoin/asset/withdraw-list` | READ |
-| 4 | Single withdrawal status | GET | `/deepcoin/asset/withdrawal-status` | READ |
-| 5 | Withdrawable assets | GET | `/deepcoin/asset/withdraw-assets` | READ |
-| 6 | Withdrawal chains | GET | `/deepcoin/asset/withdraw-chains` | READ |
-| 7 | Whitelist addresses | GET | `/deepcoin/asset/withdraw-addresses` | READ |
-| 8 | Aggregated withdrawal config | GET | `/deepcoin/asset/withdraw-config` | READ |
+# Supported chains
+dcli withdrawal chains --ccy USDT
+
+# Recent withdrawal records
+dcli withdrawal records --coin USDT --page 1 --size 20
+
+# Single withdrawal status
+dcli withdrawal status --wd-id <id> --ccy USDT
+```
+
+## Command Index
+
+### Read Commands
+
+| # | Command | Description |
+|---|---|---|
+| 1 | `dcli withdrawal config [--ccy <ccy>] [--include-addresses true]` | Aggregated withdrawal config |
+| 2 | `dcli withdrawal assets [--ccy <ccy>]` | Withdrawable assets |
+| 3 | `dcli withdrawal chains --ccy <ccy>` | Supported withdrawal chains |
+| 4 | `dcli withdrawal addresses --ccy <ccy>` | Whitelist addresses |
+| 5 | `dcli withdrawal records [--coin <ccy>] [--ccy <ccy>] [--chain <chain>] [--tx-hash <hash>] [--tx-id <id>] [--wd-id <id>] [--state <state>] [--start-time <ms>] [--end-time <ms>] [--page <n>] [--size <n>]` | Withdrawal records |
+| 6 | `dcli withdrawal status --wd-id <id> [--ccy <ccy>]` | Single withdrawal status |
+
+### Write Commands
+
+Confirm with the user before running any write command.
+
+| # | Command | Description |
+|---|---|---|
+| 7 | `dcli withdrawal create --ccy <ccy> --chain <chain> --amt <amount> --address-id <id> [--to-addr <address>] [--memo <memo>] [--account-types <funding\|spot\|swap>] [--client-id <id>] [--remark <text>]` | Create withdrawal |
+| 8 | `dcli withdrawal cancel --wd-id <id> [--ccy <ccy>] [--client-id <id>]` | Cancel withdrawal |
 
 ## Operation Flow
 
-```text
-1. Identify intent: create / cancel / query status / query records / pre-check config.
-2. For create:
-   - Call withdraw-config with ccy and includeAddresses=true unless equivalent validated config is already in context.
-   - Select a chain from chains[].chain, not the platform-internal chain type.
-   - Select a whitelist address by addressId; API withdrawals require whitelist addresses.
-   - Validate withdrawEnabled, apiWithdrawEnabled, minWd, maxWd if present, precision, fee, quota, and memo/tag requirements.
-   - Use at most one accountTypes value: funding, spot, or swap. Omit it to default to funding.
-   - Present a confirmation summary and wait for explicit user confirmation.
-   - Run `dcli withdrawal create` once, then verify with `dcli withdrawal status` or `dcli withdrawal records`.
-3. For cancel:
-   - Query the withdrawal first when wdId state/canCancel is unknown.
-   - Present a cancellation summary and wait for explicit user confirmation.
-   - Run `dcli withdrawal cancel` once, then verify with `dcli withdrawal status`.
-4. For read-only queries:
-   - Use the narrowest CLI command; use `dcli withdrawal config` for pre-withdrawal checks.
-5. If the requested operation is not exposed by dcli, stop and report the missing CLI command.
-```
+1. Identify intent: pre-check, list config, list records, check status, create, or cancel.
+2. Select the matching command from [`references/withdrawal-commands.md`](references/withdrawal-commands.md).
+3. For read commands, run directly after credential preflight.
+4. Before create, run `dcli withdrawal config --ccy <ccy> --include-addresses true` unless validated config is already available.
+5. For create or cancel, summarize the action and wait for explicit user confirmation.
+6. Run the selected `dcli withdrawal ...` command once.
+7. Verify create/cancel with `dcli withdrawal status` or `dcli withdrawal records`.
+8. If the requested capability is not available in `dcli`, report the missing CLI command instead of improvising an API call.
 
-## Endpoint Reference
+## Write Confirmation Rules
 
-### 1. Create Withdrawal
+Before create or cancel, summarize:
 
-```text
-POST /deepcoin/asset/withdrawal
-```
+- operation
+- coin, amount, chain, and debit account for create
+- whitelist address ID and memo/tag status for create
+- withdrawal ID for cancel
+- verification command to run afterward
 
-| Param | Required | Description |
-|-------|----------|-------------|
-| `ccy` | Yes | Coin, e.g. `USDT` |
-| `chain` | Yes | OpenAPI chain from config, e.g. `USDT-TRC20` |
-| `amt` | Yes | Withdrawal amount as a string |
-| `addressId` | Yes | Whitelist address ID |
-| `toAddr` | No | Address consistency check against whitelist |
-| `memo` | Conditional | Required when chain or whitelist address needs memo/tag/payment ID |
-| `accountTypes` | No | Array with at most one value: `funding`, `spot`, `swap`; default is `funding` |
-| `clientId` | No | Client request ID, max 32 characters |
-| `remark` | No | Remark |
+Do not treat vague approval as confirmation for withdrawal operations.
 
-Response fields: `wdId`, `clientId`, `ccy`, `chain`, `amt`, `fee`, `state`, `cTime`.
+## Response Rules
 
-### 2. Cancel Withdrawal
-
-```text
-POST /deepcoin/asset/cancel-withdrawal
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `wdId` | Yes | Withdrawal ID |
-| `ccy` | No | Coin |
-| `clientId` | No | Tracking client request ID |
-
-Response fields: `wdId`, `clientId`, `state`, `uTime`, `canCancel`.
-
-### 3. Withdrawal Records
-
-```text
-GET /deepcoin/asset/withdraw-list
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `coin` / `ccy` | No | Coin filter |
-| `chain` | No | Chain filter |
-| `txHash` / `txId` | No | Transaction hash filter |
-| `wdId` | No | Withdrawal ID filter |
-| `state` | No | `pending`, `auditing`, `cancelling`, `succeed`, `failed`, `cancelled` |
-| `startTime` / `endTime` | No | Millisecond timestamp; docs limit history to the last 6 months |
-| `page` | No | Default `1` |
-| `size` | No | Default `20`, max `100` |
-
-Record fields include `wdId`, `clientId`, `ccy`, `chain`, `amt`, `fee`, `toAddr`, `memo`, `txId`, `state`, `canCancel`, `cTime`, `uTime`, and compatibility fields such as `txHash`, `address`, `amount`, `coin`, `status`.
-
-### 4. Single Withdrawal Status
-
-```text
-GET /deepcoin/asset/withdrawal-status
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `wdId` | Yes | Withdrawal ID |
-| `ccy` | No | Coin |
-
-Returns the same item structure as withdrawal records.
-
-### 5. Withdrawable Assets
-
-```text
-GET /deepcoin/asset/withdraw-assets
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `ccy` | No | Coin |
-
-Response fields: `ccy`, `available`, `withdrawable`, and `accounts[]` with `accountType` (`funding`, `spot`, `swap`) and `available`.
-
-### 6. Withdrawal Chains
-
-```text
-GET /deepcoin/asset/withdraw-chains
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `ccy` | Yes | Coin |
-
-Response fields: `ccy`, `chain`, `chainName`, `chainType`, `withdrawEnabled`, `state`, `minWd`, `maxWd`, `fee`, `feeCcy`, `precision`, `needMemo`, `memoName`, `reason`, `uTime`.
-
-### 7. Whitelist Addresses
-
-```text
-GET /deepcoin/asset/withdraw-addresses
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `ccy` | Yes | Coin |
-| `chain` | No | OpenAPI chain |
-| `addressId` | No | Whitelist address ID |
-
-Response fields: `addressId`, `ccy`, `chain`, `chainType`, `toAddr`, `memo`, `label`, `apiWithdrawEnabled`, `state`, `cTime`, `uTime`.
-
-### 8. Aggregated Withdrawal Config
-
-```text
-GET /deepcoin/asset/withdraw-config
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| `ccy` | Yes | Coin |
-| `includeAddresses` | No | Include whitelist addresses; use `true` before creating a withdrawal |
-
-Response fields: `ccy`, `withdrawable`, `quota`, `usedQuota`, `leftQuota`, `withdrawEnabled`, `addressWhitelistWithdrawOnly`, `notice`, `assets[]`, `addresses[]`, `chains[]`.
-
-## Safety Rules
-
-1. Creating or cancelling withdrawals always requires explicit user confirmation.
-2. Treat withdrawals as irreversible once accepted by the platform. Never retry a create request unless idempotency via `clientId` and final status are understood.
-3. Confirm `ccy`, `chain`, `amt`, `addressId`, `toAddr`, `memo`, `fee`, and `accountTypes` before a create write.
-4. Use whitelist `addressId`; do not invent addresses or bypass whitelist restrictions.
-5. When `needMemo=true` or the whitelist address has a memo, require the exact memo in the withdrawal request.
-6. Validate precision and minimum/maximum withdrawal amount before asking for confirmation.
-7. Never expose API secrets, signatures, or passphrases in output or logs.
-
-## Scope & Boundaries
-
-| User Intent | Skill to Use |
-|-------------|-------------|
-| On-chain withdrawal create/cancel/status/config/whitelist | **deepcoin-withdrawal** (this skill) |
-| Generic balances, positions, account bills, deposits, transfers | `deepcoin-portfolio` |
-| Internal transfers between Deepcoin users | `deepcoin-portfolio` |
-| Place/cancel/amend trading orders | `deepcoin-trade` |
-| Public market data | `deepcoin-market` |
-| Copy trading | `deepcoin-copytrade` |
-| Strategy orders and backtests | `deepcoin-strategy` |
+- Prefer pre-checks before create.
+- Never replay withdrawal writes automatically after an uncertain error.
+- Keep withdrawal addresses and IDs concise; avoid printing unnecessary sensitive details.
+- Use only documented `dcli` commands; do not provide low-level protocol or signing instructions.

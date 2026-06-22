@@ -1,11 +1,11 @@
 ---
 name: deepcoin-market
-description: "Use this skill when the user asks for: price of any crypto asset on Deepcoin, ticker data, order book depth, recent trades, K-line / candlestick data (regular, mark-price, index-price), funding rate, instrument metadata (tickSz, minSz, leverage tiers), step margin, book spread, system time, or real-time public WebSocket market streams. Do NOT use for account balance / positions (use deepcoin-portfolio), order placement / cancellation (use deepcoin-trade), copy trading (use deepcoin-copytrade), or strategy orders (use deepcoin-strategy)."
+description: "Use this skill when the user asks for: price of any crypto asset on Deepcoin, ticker data, order book depth, recent trades, K-line / candlestick data (regular, mark-price, index-price), funding rate, instrument metadata (tickSz, minSz, leverage tiers), step margin, book spread, system time, or market connectivity checks through dcli. Do NOT use for account balance / positions (use deepcoin-portfolio), order placement / cancellation (use deepcoin-trade), copy trading (use deepcoin-copytrade), or strategy orders (use deepcoin-strategy)."
 license: MIT
 metadata:
   author: Deepcoin
   version: "1.0.2"
-  homepage: "https://api.deepcoin.com"
+  homepage: "https://github.com/deepcoinapi/agent-cli"
   agent:
     requires:
       bins: ["dcli"]
@@ -17,309 +17,72 @@ metadata:
         label: "Install dcli"
 ---
 
-# Deepcoin Market Skill
+# Deepcoin Market CLI
 
-Retrieve public market data from Deepcoin via REST APIs and public WebSocket channels. All endpoints in this skill are **unauthenticated** — no API key required.
+Public market data on Deepcoin: tickers, order books, candles, trades, funding rates, instrument metadata, margin tiers, spreads, time, and connectivity checks. No API credentials are required for this skill.
 
-## CLI Execution
+## Preflight
 
-Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
-Use only the stable CLI commands in [`references/market-commands.md`](references/market-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs.
+Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 
-## Performance and Rate Limits
+Use only the stable CLI commands in [`references/market-commands.md`](references/market-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts.
 
-Use the public market-data fast path by default.
+## Skill Routing
 
-- Market-data endpoints are typically limited to **5 requests per second per IP**; stay at or below that unless endpoint docs say otherwise.
-- Prefer endpoints that return multiple instruments in one call, such as ticker or funding snapshots, before looping over single-instrument queries.
-- For independent REST reads, use bounded concurrency up to the documented limit instead of serial 1-second sleeps.
-- Do not add preflight calls such as server time or instruments unless the user asked for them or they are required for the requested result.
-- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than immediately replaying the full batch.
+- Account balance, positions, leverage, transfers -> `deepcoin-portfolio`
+- Order placement, cancellation, amendments, TP/SL, fills -> `deepcoin-trade`
+- On-chain withdrawal config, whitelist, create/cancel/status -> `deepcoin-withdrawal`
+- Copy trading settings, followers, leader positions -> `deepcoin-copytrade`
+- Strategy DSL and backtests -> `deepcoin-strategy`
+- Prices, candles, order books, trades, funding, instruments -> this skill
 
-## Compliance Disclaimer
+## Quickstart
 
-Market data returned by these APIs is raw exchange data. It is **not** financial advice. The agent must never interpret price data as a buy/sell recommendation.
+```bash
+# Connectivity
+dcli market ping
 
----
+# Single instrument ticker
+dcli market ticker BTC-USDT-SWAP --json
 
-## API Endpoint Index
+# All swap tickers
+dcli market tickers --inst-type SWAP --json
 
-| # | Endpoint | Method | Path | Type |
-|---|----------|--------|------|------|
-| 1 | Instruments (product info) | GET | `/deepcoin/market/instruments` | READ |
-| 2 | Market tickers | GET | `/deepcoin/market/tickers` | READ |
-| 3 | Order book | GET | `/deepcoin/market/books` | READ |
-| 4 | Recent trades | GET | `/deepcoin/market/trades` | READ |
-| 5 | K-line / candlesticks | GET | `/deepcoin/market/candles` | READ |
-| 6 | Index price K-line | GET | `/deepcoin/market/index-candles` | READ |
-| 7 | Mark price K-line | GET | `/deepcoin/market/mark-price-candles` | READ |
-| 8 | Historical K-line (1m) | GET | `/deepcoin/market/handicap-kline1m` | READ |
-| 9 | Historical orderbook | GET | `/deepcoin/market/handicap-orderbook` | READ |
-| 10 | Historical trades | GET | `/deepcoin/market/handicap-trade` | READ |
-| 11 | Step margin | GET | `/deepcoin/market/step-margin` | READ |
-| 12 | Book spread | GET | `/deepcoin/market/book-spread` | READ |
-| 13 | Server time | GET | `/deepcoin/market/time` | READ |
-| 14 | Ping | GET | `/deepcoin/market/ping` | READ |
-| 15 | Current funding rate | GET | `/deepcoin/trade/fund-rate/current-funding-rate` | READ |
-| 16 | Funding rate list | GET | `/deepcoin/trade/funding-rate` | READ |
-| 17 | Funding rate history | GET | `/deepcoin/trade/fund-rate/history` | READ |
+# Candles
+dcli market candles BTC-USDT-SWAP --bar 1H --limit 100 --json
 
-> All endpoints are READ-only. No authentication headers are required.
+# Order book
+dcli market orderbook BTC-USDT-SWAP --sz 20 --json
+```
 
----
+## Command Index
+
+| # | Command | Description |
+|---|---|---|
+| 1 | `dcli market instruments --inst-type <SPOT\|SWAP> [--inst-id <id>] [--json]` | Tradeable instruments and metadata |
+| 2 | `dcli market tickers --inst-type <SPOT\|SWAP> [--json]` | Tickers for an instrument type |
+| 3 | `dcli market ticker <INST_ID> [--json]` | Ticker for one instrument |
+| 4 | `dcli market orderbook <INST_ID> [--sz <n>] [--json]` | Order book depth |
+| 5 | `dcli market candles <INST_ID> [--bar <bar>] [--limit <n>] [--after <ts>] [--json]` | Candlestick data |
+| 6 | `dcli market trades <INST_ID> [--product-group <Spot\|Swap\|SwapU>] [--limit <n>] [--json]` | Recent trades |
+| 7 | `dcli market funding-rate --inst-type <SwapU\|Swap> [--inst-id <id>] [--json]` | Current funding rates |
+| 8 | `dcli market funding-rate-history <INST_ID> [--page <n>] [--size <n>]` | Funding-rate history |
+| 9 | `dcli market book-spread <INST_ID> [--value <value>] [--vtype <0\|1>]` | Bid-ask spread estimate |
+| 10 | `dcli market step-margin <INST_ID> [--json]` | Margin tiers |
+| 11 | `dcli market server-time` | Exchange server time |
+| 12 | `dcli market ping` | Connectivity check |
 
 ## Operation Flow
 
-```
-1. Identify user intent (price? depth? candles? streaming?)
-2. Select the correct command from references/market-commands.md
-3. Run the matching dcli command directly; add --json only when raw output is needed
-4. If the requested operation is not exposed by dcli, stop and report the missing CLI command
-5. Explain what the response fields mean if the user is unfamiliar
-```
-
----
-
-## Endpoint Reference
-
-### 1. Instruments (Product Info)
-
-```
-GET /deepcoin/market/instruments
-```
-
-| Param | Required | Values | Description |
-|-------|----------|--------|-------------|
-| instType | Yes | `SPOT`, `SWAP` | Instrument type: `SPOT` = spot (现货), `SWAP` = perpetual contract (合约) |
-| uly | No | e.g. `BTC-USDT` | Underlying |
-| instId | No | e.g. `BTC-USDT-SWAP` | Specific instrument |
-
-Key response fields: `instId`, `baseCcy`, `quoteCcy`, `tickSz`, `lotSz`, `minSz`, `maxLmtSz`, `maxMktSz`, `lever`, `ctVal`, `state`.
-
-### 2. Market Tickers
-
-```
-GET /deepcoin/market/tickers
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instType | Yes | `SPOT`, `SWAP` (`SPOT` = 现货, `SWAP` = 合约) |
-| uly | No | e.g. `BTC-USDT` |
-
-Key response fields: `instId`, `last`, `lastSz`, `askPx`, `askSz`, `bidPx`, `bidSz`, `open24h`, `high24h`, `low24h`, `vol24h`, `volCcy24h`, `ts`.
-
-### 3. Order Book
-
-```
-GET /deepcoin/market/books
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instId | Yes | e.g. `BTC-USDT-SWAP` |
-| sz | Yes | Max 400 levels |
-
-Response: `asks` and `bids` arrays, each element is `[price, size]`.
-
-### 4. Recent Trades
-
-```
-GET /deepcoin/market/trades
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instId | Yes | e.g. `BTC-USDT` |
-| productGroup | Yes | `Spot`, `Swap`, `SwapU` |
-| limit | No | Max 500, default 100 |
-
-### 5. K-line / Candlesticks
-
-```
-GET /deepcoin/market/candles
-```
-
-| Param | Required | Values |
-|-------|----------|--------|
-| instId | Yes | e.g. `BTC-USDT-SWAP` |
-| bar | No | `1m`, `5m`, `15m`, `30m`, `1H`, `4H`, `12H`, `1D`, `1W`, `1M`, `1Y` |
-| after | No | Pagination timestamp |
-| limit | No | Max 300 |
-
-Response: array of `[ts, open, high, low, close, vol_base, vol_quote]`.
-
-### 6–7. Index / Mark Price K-lines
-
-```
-GET /deepcoin/market/index-candles
-GET /deepcoin/market/mark-price-candles
-```
-
-Same parameters as `/candles`. Response: `[ts, open, high, low, close, 0, 0]`.
-
-### 8–10. Historical Handicap Data
-
-```
-GET /deepcoin/market/handicap-kline1m
-GET /deepcoin/market/handicap-orderbook
-GET /deepcoin/market/handicap-trade
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| symbol | Yes | e.g. `BTC-USDT-SWAP` |
-| stime | Yes | Start time in **seconds** |
-| etime | No | End time in **seconds** |
-| limit | Yes | 1–2000 |
-
-> Note: these endpoints use `symbol` (not `instId`) and **seconds** (not milliseconds).
-> Observed behavior: `etime` can be omitted and the request may still succeed, even though older skill text treated it as required.
-
-### 11. Step Margin
-
-```
-GET /deepcoin/market/step-margin
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | Yes | SWAP instruments only |
-
-Response: `grade`, `leverage`, `maxContractValue`, `maintenanceMarginRate`.
-
-### 12. Book Spread
-
-```
-GET /deepcoin/market/book-spread
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| instId | Yes | e.g. `BTC-USDT-SWAP` |
-| value | Yes | Order value |
-| vType | No | `0` = quoteCcy, `1` = baseCcy |
-
-### 13–14. System Info
-
-```
-GET /deepcoin/market/time    → { ts: "1597026383085" }
-GET /deepcoin/market/ping    → connectivity check
-```
-
-### 15–17. Funding Rate
-
-```
-GET /deepcoin/trade/fund-rate/current-funding-rate
-    Params:
-    - instType (required): `SwapU`, `Swap`
-    - instId (optional): omit to query all instruments
-
-GET /deepcoin/trade/funding-rate
-    Params:
-    - instType (required): `SwapU`, `Swap`
-    - instId (optional): omit to query all instruments
-      Format note: observed requests use compact symbols such as `BTCUSDT`, not `BTC-USDT-SWAP`
-
-GET /deepcoin/trade/fund-rate/history
-    Params:
-    - instId (required)
-    - page (optional, default `1`)
-    - size (optional, max `100`, default `20`)
-```
-
-Funding history response note: rows are nested under `data.rows`, not returned as a flat top-level `data[]`.
-
-`instType` convention throughout this skill: `SPOT` means spot (现货), `SWAP` means perpetual contract (合约).
-
----
-
-## Public WebSocket
-
-### Connection URLs
-
-| Market | URL |
-|--------|-----|
-| Swap contracts | `wss://stream.deepcoin.com/streamlet/trade/public/swap?platform=api` |
-| Spot | `wss://stream.deepcoin.com/streamlet/trade/public/spot?platform=api` |
-
-Heartbeat: send `ping`, receive `pong`.
-
-### Subscribe Format (v2 — recommended)
-
-```json
-{
-  "action": "sub",
-  "topic": "{topic}",
-  "instId": "{instId}",
-  "version": "v2"
-}
-```
-
-### Available Topics (v2)
-
-| Topic | Description | Example instId |
-|-------|-------------|----------------|
-| `market` | Latest tick data | `BTC-USDT-SWAP` |
-| `trade` | Recent trades | `BTC-USDT-SWAP` |
-| `kline-{period}` | K-line data | `BTC-USDT-SWAP` |
-| `book25` | 25-level incremental orderbook | `BTC-USDT-SWAP` |
-| `liquidationOrder` | Liquidation orders | `BTC-USDT-SWAP` |
-
-K-line periods: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `12h`, `1d`, `1w`, `1o`, `1y`.
-
-### V1 Topics (legacy)
-
-| TopicID | Description |
-|---------|-------------|
-| 2 | Transaction details |
-| 7 | Latest market data |
-| 11 | K-lines (1m only) |
-| 25 | 25-level orderbook |
-| 30 | Liquidation orders |
-
----
-
-## Edge Cases & Gotchas
-
-1. **instId format**: Always use the exact format — `BTC-USDT` for spot, `BTC-USDT-SWAP` for perpetual swap. Case-sensitive.
-2. **Handicap endpoints** use `symbol` param (not `instId`) and timestamps in **seconds** (not milliseconds).
-3. **K-line bar values** are case-sensitive: `1H` not `1h` for REST; WebSocket v2 uses lowercase `1h`.
-4. **Funding rate endpoints** live under `/deepcoin/trade/` path but are public READ operations — included here for discoverability.
-5. **Order book `sz`** max is 400 levels. For real-time incremental updates, use WebSocket `book25` topic instead.
-6. **Rate limits**: Market data endpoints are typically limited to 5 req/s per IP.
-
----
-
-## Scope & Boundaries
-
-| User Intent | Skill to Use |
-|-------------|-------------|
-| Price, ticker, orderbook, candles, funding rate, instruments | **deepcoin-market** (this skill) |
-| Account balance, positions, leverage, assets, transfers | `deepcoin-portfolio` |
-| Place / cancel / amend orders, trigger orders, TP/SL | `deepcoin-trade` |
-| Copy trading settings, followers, leader positions | `deepcoin-copytrade` |
-| DSL strategy orders, backtesting | `deepcoin-strategy` |
-
----
-
-## Example Requests
-
-### Get BTC-USDT spot ticker
-
-```bash
-dcli market ticker BTC-USDT --json
-```
-
-### Get 1-hour K-lines for BTC-USDT-SWAP
-
-```bash
-dcli market candles BTC-USDT-SWAP --bar 1H --limit 100 --json
-```
-
-### Subscribe to real-time trades via WebSocket
-
-```text
-Current CLI gap: dcli does not expose public WebSocket streaming commands yet.
-Report the missing command instead of writing a temporary WebSocket client.
-```
+1. Identify the requested data type: ticker, candles, order book, trades, funding, instruments, spread, margin tier, or time.
+2. Select the matching command from [`references/market-commands.md`](references/market-commands.md).
+3. Run the command directly. Add `--json` when raw output is needed.
+4. If several independent reads are needed, prefer aggregate commands before looping.
+5. If the requested capability is not available in `dcli`, report the missing CLI command instead of improvising an API call.
+
+## Notes
+
+- Market commands are read-only.
+- Market data is raw exchange data, not financial advice.
+- Streaming is currently not exposed by `dcli`. Report it as missing instead of writing a temporary client.
+- Use canonical instrument IDs such as `BTC-USDT` for spot and `BTC-USDT-SWAP` for perpetual swaps.

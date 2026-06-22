@@ -5,7 +5,7 @@ license: MIT
 metadata:
   author: Deepcoin
   version: "1.0.2"
-  homepage: "https://api.deepcoin.com"
+  homepage: "https://github.com/deepcoinapi/agent-cli"
   agent:
     requires:
       bins: ["dcli"]
@@ -21,331 +21,78 @@ metadata:
       env: ["DC_API_KEY", "DC_SECRET_KEY", "DC_PASSPHRASE"]
 ---
 
-# Deepcoin Strategy Skill
+# Deepcoin Strategy CLI
 
-Create and backtest automated trading strategies on Deepcoin using a DSL (Domain Specific Language) that supports technical indicators and conditional entry/exit logic. All endpoints are **authenticated**.
+DSL strategy drafting, backtesting, and live DSL trigger-order preparation on Deepcoin. Requires Deepcoin credentials for `dcli` strategy commands.
 
-## CLI Execution
+## Preflight
 
-Before running commands, follow [`../_shared/dcli.md`](../_shared/dcli.md).
-Use only the stable CLI commands in [`references/strategy-commands.md`](references/strategy-commands.md). Do not write temporary Python, JavaScript, shell, or cURL request/signing scripts for Deepcoin APIs. Creating or editing DSL JSON files is allowed when the user asks for a strategy artifact.
+Before running any command, follow [`../_shared/dcli.md`](../_shared/dcli.md).
 
-## Performance and Rate Limits
+Use only the stable CLI commands in [`references/strategy-commands.md`](references/strategy-commands.md). Do not bypass `dcli` with temporary Python, JavaScript, shell, signing, or request scripts. Creating or editing a strategy DSL JSON file is allowed when the user asks for a strategy artifact.
 
-Keep live deployment conservative, but avoid unnecessary backtest loops.
+## Credential Check
 
-- Run only the backtests needed to answer the user's request; do not auto-sweep parameter grids unless asked.
-- Use bounded concurrency for independent backtests only if endpoint limits permit it.
-- Serialize live DSL trigger-order submissions by default.
-- On HTTP `429` or equivalent rate-limit errors, pause and retry with backoff rather than replaying the full batch immediately.
+Authenticated commands require Deepcoin credentials in environment variables. Prefer `DEEPCOIN_API_KEY`, `DEEPCOIN_SECRET_KEY`, and `DEEPCOIN_PASSPHRASE`; `DC_*` aliases are supported.
 
----
+Never ask the user to paste credentials into chat.
 
-## Authentication
+## Skill Routing
 
-Every request must include these headers:
+- Market data and indicators from exchange market data -> `deepcoin-market`
+- Account balance and positions -> `deepcoin-portfolio`
+- Manual orders, triggers, TP/SL, fills -> `deepcoin-trade`
+- Copy trading -> `deepcoin-copytrade`
+- Strategy DSL drafting, backtests, live DSL trigger orders -> this skill
 
-| Header | Value |
-|--------|-------|
-| `DC-ACCESS-KEY` | Your API Key |
-| `DC-ACCESS-SIGN` | `Base64(HMAC-SHA256(timestamp + method + requestPath + body, secretKey))` |
-| `DC-ACCESS-TIMESTAMP` | ISO 8601 (e.g. `2020-12-08T09:08:57.715Z`) |
-| `DC-ACCESS-PASSPHRASE` | Passphrase set when creating the API key |
+## Quickstart
 
-**NEVER** accept API credentials in chat. Use environment variables or config files.
+```bash
+# Backtest a DSL JSON file
+dcli strategy backtest --symbol BTC-USDT-SWAP --from-ts 2025-01-01T00:00:00Z --to-ts 2025-03-01T00:00:00Z --dsl @strategy.json --json
 
----
+# Deploy a live DSL trigger order after explicit confirmation
+dcli strategy dsl-trigger-order --symbol BTC-USDT-SWAP --trade-mode isolated --mrg-position merge --dsl @strategy.json
+```
 
-## API Endpoint Index
+## Command Index
 
-| # | Endpoint | Method | Path | Type |
-|---|----------|--------|------|------|
-| 1 | Backtest strategy | POST | `/deepcoin/trade/backtest-run` | READ |
-| 2 | DSL trigger order | POST | `/deepcoin/trade/dsl-trigger-order` | **WRITE** |
+### Read / Validation Commands
 
----
+| # | Command | Description |
+|---|---|---|
+| 1 | `dcli strategy backtest --symbol <INST_ID> --from-ts <iso-time> --to-ts <iso-time> --dsl @strategy.json [--json]` | Run a backtest |
+
+### Write Commands
+
+Confirm with the user before running any live deployment command.
+
+| # | Command | Description |
+|---|---|---|
+| 2 | `dcli strategy dsl-trigger-order --symbol <INST_ID> --trade-mode <cross\|isolated> --mrg-position <merge\|split> --dsl @strategy.json` | Place live DSL trigger order |
 
 ## Operation Flow
 
-```
-1. Understand the user's strategy intent (indicators, entry/exit logic, risk)
-2. Build the DSL JSON structure
-3. Run `dcli strategy backtest` when the user requests validation, comparison, or live deployment preparation
-4. Review backtest results with user
-5. If user confirms → deploy with `dcli strategy dsl-trigger-order`
-6. Always backtest before deploying live, but do not require a backtest for pure DSL drafting or explanation
-7. If the requested operation is not exposed by dcli, stop and report the missing CLI command
-```
+1. Identify intent: draft DSL, review DSL, backtest, compare results, or deploy live.
+2. For pure drafting or explanation, create or edit only the DSL JSON artifact; do not run commands unless needed.
+3. For validation, run `dcli strategy backtest`.
+4. For live deployment, require a prior backtest or explicit user decision to proceed without one.
+5. Before `dcli strategy dsl-trigger-order`, summarize the strategy, symbol, trade mode, position mode, and risks, then wait for explicit confirmation.
+6. If the requested capability is not available in `dcli`, report the missing CLI command instead of improvising an API call.
 
----
+## DSL Notes
 
-## DSL Structure
+Supported strategy concepts include:
 
-The DSL is a JSON object with a specific schema for defining indicator-based strategies.
+- indicators: `BOLL`, `MA`, `EMA`, `KDJ`, `RSI`, `WR`
+- entry and exit logic
+- risk controls such as stop loss and take profit
+- execution settings such as fees
 
-### Top-Level Structure
+Use `@strategy.json` for non-trivial DSL payloads instead of long inline JSON.
 
-```json
-{
-  "version": "1.0",
-  "indicators": [
-    {
-      "name": "boll",
-      "type": "BOLL",
-      "scope": "entry",
-      "params": { "period": 20, "std": 2, "interval": "1m" },
-      "condition": { "ref": "boll.lower", "op": "<" }
-    }
-  ],
-  "then": {
-    "entry": {
-      "on_true": { "action": "open", "side": "long", "volume": 100 }
-    },
-    "exit": {
-      "on_true": { "action": "close", "side": "long", "volume": 100 }
-    }
-  },
-  "risk": {
-    "stop_loss": { "value": 0.1 },
-    "take_profit": { "value": 0.2 }
-  },
-  "execution": {
-    "fee_bps": 5
-  }
-}
-```
+## Response Rules
 
-### Supported Indicators
-
-| Indicator | Params | Description |
-|-----------|--------|-------------|
-| `BOLL` | `period`, `std`, `interval` | Bollinger Bands (upper, middle, lower) |
-| `MA` | `period`, `interval` | Simple Moving Average |
-| `EMA` | `period`, `interval` | Exponential Moving Average |
-| `KDJ` | `n`, `k_smoothing`, `d_smoothing`, `interval` | KDJ Stochastic |
-| `RSI` | `period`, `interval` | Relative Strength Index |
-| `WR` | `period`, `interval` | Williams %R |
-
-### Indicator Definition Example
-
-```json
-{
-  "name": "boll",
-  "type": "BOLL",
-  "scope": "entry",
-  "params": { "period": 20, "std": 2, "interval": "1m" },
-  "condition": { "ref": "boll.lower", "op": "<" }
-}
-```
-
-### Condition Operators
-
-| Operator | Description |
-|----------|-------------|
-| `>` | Greater than |
-| `<` | Less than |
-
-### Reference Fields
-
-- `boll.lower`, `boll.upper`, `ma5.value` style indicator fields
-- `right` can be a fixed threshold for KDJ / RSI / WR
-- `diff_price` can express distance from current market price
-
-### Entry / Exit Definition
-
-```json
-{
-  "then": {
-    "entry": {
-      "on_true": {
-        "action": "open",
-        "side": "long",
-        "volume": 100
-      }
-    },
-    "exit": {
-      "on_true": {
-        "action": "close",
-        "side": "long",
-        "volume": 100
-      }
-    }
-  }
-}
-```
-
-### Risk Management
-
-```json
-{
-  "risk": {
-    "stop_loss": { "value": 0.1 },
-    "take_profit": { "value": 0.2 }
-  }
-}
-```
-
----
-
-## Endpoint Reference
-
-### 1. Backtest Strategy
-
-```
-POST /deepcoin/trade/backtest-run
-```
-
-Request body:
-
-```json
-{
-  "dsl": {
-    "version": "1.0",
-    "indicators": [
-      {
-        "name": "boll",
-        "type": "BOLL",
-        "scope": "entry",
-        "params": { "period": 20, "std": 2, "interval": "1m" },
-        "condition": { "ref": "boll.lower", "op": "<" }
-      }
-    ],
-    "then": {
-      "entry": { "on_true": { "action": "open", "side": "long", "volume": 100 } },
-      "exit": { "on_true": { "action": "close", "side": "long", "volume": 100 } }
-    },
-    "risk": {
-      "stop_loss": { "value": 0.1 },
-      "take_profit": { "value": 0.2 }
-    },
-    "execution": { "fee_bps": 5 }
-  },
-  "data_source": {
-    "symbol": "BTC-USDT-SWAP",
-    "from_ts": 1772054911,
-    "to_ts": 1772090911
-  },
-  "include_trades": true
-}
-```
-
-Response:
-
-```json
-{
-  "summary": {
-    "realized_pnl": 1234.56,
-    "symbol": "BTC-USDT-SWAP",
-    "total_fee": 12.34,
-    "trades": 42
-  },
-  "trades": [...]
-}
-```
-
-Observed limitation: testing indicates a required order-size field is still missing from the published backtest schema. Attempts without that extra size field fail, and the correct accepted placement within the payload is not yet documented in the API docs.
-
-### 2. DSL Trigger Order (Live Deployment)
-
-```
-POST /deepcoin/trade/dsl-trigger-order
-```
-
-| Param | Required | Description |
-|-------|----------|-------------|
-| trade_info.symbol | Yes | e.g. `BTC-USDT-SWAP` |
-| trade_info.tradeMode | Yes | `isolated`, `cross` |
-| trade_info.mrgPosition | No | `merge`, `split` (default `merge`) |
-| dsl_json | Yes | Full DSL JSON using `indicators`, `condition`, `then.entry/exit.on_true`, and optional `risk` |
-
-> **WRITE operation** — this deploys a live automated strategy. Always confirm with user.
-
-Observed limitation: live deployment appears to have the same undocumented size-field gap as backtesting. The public docs do not currently describe a working payload shape that satisfies this extra requirement.
-
----
-
-## Safety Rules
-
-1. **Always backtest before deploying live.** Present backtest results and get explicit user confirmation. For pure drafting or explanation, do not force a backtest.
-2. **DSL trigger orders execute automatically.** Make the user aware that once deployed, trades happen without manual intervention.
-3. **Validate indicator parameters** — e.g., BOLL period should be reasonable (typically 10–50), RSI period typically 14.
-4. **Risk parameters are critical** — stop_loss and take_profit percentages directly affect capital at risk.
-5. **Never fabricate** backtest results or PnL numbers.
-
----
-
-## Decision Workflow
-
-### "I want to create an automated strategy"
-
-```
-→ What indicators? (BOLL, MA, EMA, KDJ, RSI, WR)
-→ Entry conditions? (which fields, which operators, AND/OR logic)
-→ Exit conditions?
-→ Risk management? (stop loss %, take profit %)
-→ Which instrument? (e.g. BTC-USDT-SWAP)
-→ Build DSL JSON
-→ Run backtest first (endpoint #1)
-→ Present results: PnL, number of trades, fees
-→ User confirms? → Deploy live (endpoint #2)
-```
-
----
-
-## Example: Bollinger Band + RSI Strategy
-
-### DSL Definition
-
-```json
-{
-  "version": "1.0",
-  "indicators": [
-    {
-      "name": "boll",
-      "type": "BOLL",
-      "scope": "entry",
-      "params": { "period": 20, "std": 2, "interval": "1m" },
-      "condition": { "ref": "boll.lower", "op": "<" }
-    },
-    {
-      "name": "rsi",
-      "type": "RSI",
-      "scope": "entry",
-      "params": { "period": 14, "interval": "1m" },
-      "condition": { "ref": "rsi.value", "op": "<", "right": 30 }
-    }
-  ],
-  "then": {
-    "entry": { "on_true": { "action": "open", "side": "long", "volume": 100 } }
-  },
-  "risk": {
-    "stop_loss": { "value": 0.02 },
-    "take_profit": { "value": 0.05 }
-  },
-  "execution": { "fee_bps": 5 }
-}
-```
-
-**Logic**: Enter long when the Bollinger lower-band condition and RSI<30 are both satisfied. Protect the position with 5% take profit and 2% stop loss.
-
----
-
-## Edge Cases & Gotchas
-
-1. **DSL version** should be `"1.0"` when included.
-2. **Backtest `data_source`** uses Unix timestamps in seconds for `from_ts` and `to_ts`.
-3. **Indicator blocks** use `type`, `params`, `condition`, and `scope`; they do not use the older `conditions[]` shape.
-4. **Live strategy orders** support `on_true` action branches; keep payloads aligned with the documented DSL shape.
-5. **Trade mode** in `trade_info` must match the user's account configuration (cross vs isolated, merge vs split).
-
----
-
-## Scope & Boundaries
-
-| User Intent | Skill to Use |
-|-------------|-------------|
-| DSL strategy orders, backtesting, automated indicator-based trading | **deepcoin-strategy** (this skill) |
-| Price, ticker, orderbook, candles | `deepcoin-market` |
-| Manual order placement / cancellation | `deepcoin-trade` |
-| Account balance, positions, leverage, transfers | `deepcoin-portfolio` |
-| Copy trading | `deepcoin-copytrade` |
+- Separate strategy design from live deployment.
+- Do not deploy live strategies without explicit confirmation.
+- Use only documented `dcli` commands; do not provide low-level protocol or signing instructions.

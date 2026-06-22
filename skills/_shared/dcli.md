@@ -48,7 +48,7 @@ Never ask the user to paste credentials into chat. Ask them to configure environ
 
 ## Hard Rule
 
-Do not create ad hoc Python, JavaScript, shell, curl-signing, or multi-step request scripts to call Deepcoin APIs.
+Do not create ad hoc Python, JavaScript, shell, signing, or multi-step request scripts that bypass `dcli`.
 
 Allowed execution forms:
 
