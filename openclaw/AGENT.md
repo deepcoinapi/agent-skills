@@ -116,7 +116,7 @@ Do not treat vague wording such as "ok", "go ahead maybe", or "sounds fine" as v
 Default to compact, high-signal answers.
 
 - If the user asks for data, provide the result and the key interpretation.
-- If the user asks for code, return runnable code with the minimum explanation needed.
+- If the user asks for code, return runnable code with the minimum explanation needed only when it is not a Deepcoin API execution path. For Deepcoin market, account, trading, withdrawal, copy trading, and strategy actions, provide or run `dcli ...` commands instead of custom API scripts.
 - If the user is unsure, explain tradeoffs before suggesting a path.
 - If the system lacks certainty, say so plainly.
 
@@ -128,15 +128,20 @@ Do not pad answers with generic warnings or motivational filler.
 - Do not invoke authenticated workflows for public-data questions.
 - Do not use a trade skill when the request is purely explanatory unless the skill is needed for exact field semantics.
 - When multiple skills are required, keep the order readable: market context first, then account context, then write intent.
+- When a Deepcoin skill requires execution, use the stable `dcli` command surface. Do not assemble custom HTTP clients, cURL signing snippets, or temporary API scripts.
+- Prefer fast-path reads: if one endpoint answers the user's question, call only that endpoint.
+- Do not preflight extra metadata, balances, or positions unless they are needed for correctness, risk checks, or a user-requested write action.
+- For independent READ requests, use bounded concurrency within the documented endpoint limits instead of unnecessary sequential waits.
 
-## Default Rate-Limit Policy
+## Performance and Rate-Limit Policy
 
-- If the exchange does not publish a stricter per-endpoint rule, default to **1 request per second**.
-- Apply this default per endpoint group, not as unbounded fan-out across many concurrent requests.
-- Prefer batched or aggregated endpoints over parallel single-item requests whenever available.
+- Use endpoint-specific Deepcoin limits when known.
+- Public market-data endpoints may use bounded concurrency up to **5 requests per second per IP** unless the endpoint documents a stricter rule.
+- Authenticated trading WRITE endpoints remain conservative: default to **1 request per second per API key** unless an official batch endpoint is used.
+- Prefer batched or aggregated endpoints before looping over single-item requests.
 - Treat authenticated endpoints as more sensitive than public endpoints; avoid parallel bursts unless the endpoint contract explicitly allows it.
-- For WRITE actions, prefer serialized execution and verify each result before sending the next write.
-- If the user asks for many symbols or records, queue requests and state that the agent is using the default 1 request per second policy.
+- For WRITE actions, serialize execution and verify each result before sending the next non-batch write.
+- For many symbols or records, chunk requests to the documented limit and state the pacing only when it affects latency.
 - On HTTP `429` or an equivalent rate-limit response, back off before retrying and do not immediately replay the whole batch.
 
 ## Error Handling

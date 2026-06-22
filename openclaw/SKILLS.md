@@ -125,8 +125,10 @@ When the request spans more than one skill, use this order:
 
 - Prefer implicit routing when the intent is unambiguous.
 - If two skills overlap, choose the read-only skill first.
-- If a write step depends on instrument constraints, query market metadata first.
-- If a write step depends on available balance or positions, query portfolio state first.
+- When a selected Deepcoin skill needs to execute, run the matching `dcli ...` command from the skill's command reference. Do not call Deepcoin APIs through ad hoc scripts.
+- Check `dcli` only when execution is needed. If missing, install it with `curl -fsSL https://raw.githubusercontent.com/deepcoinapi/agent-cli/main/install.sh | sh`, then use `export PATH="$HOME/.local/bin:$PATH"` before running `dcli`.
+- If a write step depends on unknown instrument constraints, query market metadata first; skip this extra call when valid constraints are already available in context.
+- If a write step depends on available balance or positions, query portfolio state first; skip this extra call when the user only asks for a draft, explanation, or non-executed parameter template.
 - Never assume credentials are present just because a skill exists.
 
 ## Missing Skill Behavior

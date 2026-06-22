@@ -76,7 +76,7 @@ Every request must include these headers:
    - Validate withdrawEnabled, apiWithdrawEnabled, minWd, maxWd if present, precision, fee, quota, and memo/tag requirements.
    - Use at most one accountTypes value: funding, spot, or swap. Omit it to default to funding.
    - Present a confirmation summary and wait for explicit user confirmation.
-   - Submit POST withdrawal once, then verify with withdrawal-status or withdraw-list.
+   - Run `dcli withdrawal create` once, then verify with `dcli withdrawal status` or `dcli withdrawal records`.
 3. For cancel:
    - Query the withdrawal first when wdId state/canCancel is unknown.
    - Present a cancellation summary and wait for explicit user confirmation.
