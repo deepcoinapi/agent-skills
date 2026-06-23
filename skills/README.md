@@ -53,6 +53,8 @@ references/portfolio-commands.md
 references/dcli.md
 ```
 
+Stable zip packages are published from repository tags such as `v1.0.3`. Use tagged release assets for reproducible installation; use `main` only for active development.
+
 ## Skill Format
 
 Each `SKILL.md` follows this structure:
@@ -64,7 +66,7 @@ description: "Routing description for AI agent..."
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.2"
+  version: "1.0.3"
   homepage: "https://github.com/deepcoinapi/agent-cli"
 ---
 ```

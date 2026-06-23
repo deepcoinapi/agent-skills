@@ -91,6 +91,33 @@ references/dcli.md
 
 GitHub Actions also builds these packages on pull requests, pushes to `main`, manual workflow runs, and `v*` tags. Tagged releases upload the zip files as release assets.
 
+## Versioned Releases
+
+Use repository-level semver tags for stable skill package releases. A tag such as `v1.0.3` publishes the current `dist/deepcoin-*.zip` packages as GitHub Release assets.
+
+Each skill also keeps its own `metadata.version` in `SKILL.md`. Bump the version only for skills changed by the release. For example, if only `deepcoin-portfolio` changes, update only `skills/deepcoin-portfolio/SKILL.md`.
+
+Release checklist:
+
+```bash
+bash scripts/package-skills.sh
+bash scripts/package-skills.sh --check
+git status --short
+
+git add skills/<skill>/SKILL.md dist/<skill>.zip README.md
+git commit -m "Bump <skill> skill to <version>"
+
+git tag v<version>
+git push origin main
+git push origin v<version>
+```
+
+Install stable packages from release assets instead of `main` when reproducibility matters:
+
+```text
+https://github.com/deepcoinapi/agent-skills/releases/download/v1.0.3/deepcoin-portfolio.zip
+```
+
 ## Skill Routing
 
 Each skill defines clear boundaries in its `description` field. An AI agent should use the description to route user requests to the correct skill:

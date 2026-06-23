@@ -4,7 +4,7 @@ description: "Use this skill when the user asks for Deepcoin account balance, to
 license: MIT
 metadata:
   author: Deepcoin
-  version: "1.0.2"
+  version: "1.0.3"
   homepage: "https://github.com/deepcoinapi/agent-cli"
   agent:
     requires:
