@@ -6,6 +6,7 @@ All commands require Deepcoin credentials. Confirm with the user before every WR
 
 ```bash
 dcli account uid
+dcli account all-balances [--account-type <types>] [--ccy <ccys>] [--json]
 dcli account balance [--inst-type <SPOT|SWAP>] [--ccy <ccy>] [--json]
 dcli account positions [--inst-type <SPOT|SWAP>] [--inst-id <id>] [--json]
 dcli account bills --inst-type <SPOT|SWAP> [--ccy <ccy>] [--type <type>] [--limit <n>] [--json]
@@ -13,7 +14,10 @@ dcli account bills --inst-type <SPOT|SWAP> [--ccy <ccy>] [--type <type>] [--limi
 
 Notes:
 
-- For a complete balance view, query `SPOT` and `SWAP` separately.
+- For a complete balance view, use `dcli account all-balances --json`.
+- `all-balances --account-type` accepts comma-separated account types: `funding`, `spot`, `swapU`, `swap`, `bonus`, `rebate`, `event`, `copyTrade`, `robot`, `all`.
+- `all-balances --ccy` accepts comma-separated currencies, for example `USDT,BTC`.
+- Use `balance --inst-type` only when the user specifically asks for the trading product balance.
 - `bills` requires `--inst-type`.
 - Use `--json` for parsing, aggregation, or follow-up commands.
 
@@ -58,7 +62,7 @@ dcli account transfer --currency-id <id> --amount <amount> --from-id <id> --to-i
 Verify after account-scope transfer:
 
 ```bash
-dcli account balance --inst-type <SPOT|SWAP> --ccy <ccy> --json
+dcli account all-balances --ccy <ccy> --json
 ```
 
 ## Internal Transfers

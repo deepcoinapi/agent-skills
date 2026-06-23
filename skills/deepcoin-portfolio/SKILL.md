@@ -98,11 +98,13 @@ Rules:
 # Current account UID
 dcli account uid
 
-# Spot and swap balances
-dcli account balance --inst-type SPOT --json
-dcli account balance --inst-type SWAP --json
+# Unified balance across all account types
+dcli account all-balances --json
 
-# USDT balance in both account scopes
+# USDT balance across funding, spot, swap, copy trading, and other accounts
+dcli account all-balances --ccy USDT --json
+
+# Trading product balance when the user specifically asks for spot or swap
 dcli account balance --inst-type SPOT --ccy USDT --json
 dcli account balance --inst-type SWAP --ccy USDT --json
 
@@ -128,21 +130,22 @@ dcli account sub-account-balance
 | # | Command | Type | Description |
 |---|---|---|---|
 | 1 | `dcli account uid` | READ | Current account UID |
-| 2 | `dcli account balance [--inst-type <SPOT\|SWAP>] [--ccy <ccy>] [--json]` | READ | Account balance by account scope and currency |
-| 3 | `dcli account positions [--inst-type <SPOT\|SWAP>] [--inst-id <id>] [--json]` | READ | Open positions |
-| 4 | `dcli account bills --inst-type <SPOT\|SWAP> [--ccy <ccy>] [--type <type>] [--limit <n>] [--json]` | READ | Account ledger history |
-| 5 | `dcli account sub-accounts [--json]` | READ | Sub-account list |
-| 6 | `dcli account sub-account-balance` | READ | Total sub-account balance |
-| 7 | `dcli account sub-account-transfer-records [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Sub-account transfer records |
-| 8 | `dcli account deposit-list [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Deposit history |
-| 9 | `dcli account withdraw-list [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Withdrawal history |
-| 10 | `dcli account recharge-chains --currency-id <id> [--json]` | READ | Deposit chains for a currency ID |
-| 11 | `dcli account internal-transfer-support` | READ | Coins supported for internal transfer |
-| 12 | `dcli account internal-transfer-history [--coin <ccy>] [--status <status>] [--page <n>] [--size <n>] [--json]` | READ | Internal transfer history |
-| 13 | `dcli account rebate-summary --uid <uid> [--type <0\|1\|2>] [--start-time <ts>] [--end-time <ts>]` | READ | Rebate summary |
-| 14 | `dcli account affiliates --uid <uid> [--start-time <ts>] [--end-time <ts>]` | READ | Affiliate list |
-| 15 | `dcli account trade-stats-daily --uid <uid> --appid <id> [--instrument-ids <ids>] [--start-time <ts>] [--end-time <ts>]` | READ | Daily trade statistics |
-| 16 | `dcli account trade-stats-total --uid <uid> --appid <id> [--start-time <ts>] [--end-time <ts>]` | READ | Total trade statistics |
+| 2 | `dcli account all-balances [--account-type <types>] [--ccy <ccys>] [--json]` | READ | Unified balances across account types |
+| 3 | `dcli account balance [--inst-type <SPOT\|SWAP>] [--ccy <ccy>] [--json]` | READ | Trading product balance by account scope and currency |
+| 4 | `dcli account positions [--inst-type <SPOT\|SWAP>] [--inst-id <id>] [--json]` | READ | Open positions |
+| 5 | `dcli account bills --inst-type <SPOT\|SWAP> [--ccy <ccy>] [--type <type>] [--limit <n>] [--json]` | READ | Account ledger history |
+| 6 | `dcli account sub-accounts [--json]` | READ | Sub-account list |
+| 7 | `dcli account sub-account-balance` | READ | Total sub-account balance |
+| 8 | `dcli account sub-account-transfer-records [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Sub-account transfer records |
+| 9 | `dcli account deposit-list [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Deposit history |
+| 10 | `dcli account withdraw-list [--coin <ccy>] [--page <n>] [--size <n>] [--json]` | READ | Withdrawal history |
+| 11 | `dcli account recharge-chains --currency-id <id> [--json]` | READ | Deposit chains for a currency ID |
+| 12 | `dcli account internal-transfer-support` | READ | Coins supported for internal transfer |
+| 13 | `dcli account internal-transfer-history [--coin <ccy>] [--status <status>] [--page <n>] [--size <n>] [--json]` | READ | Internal transfer history |
+| 14 | `dcli account rebate-summary --uid <uid> [--type <0\|1\|2>] [--start-time <ts>] [--end-time <ts>]` | READ | Rebate summary |
+| 15 | `dcli account affiliates --uid <uid> [--start-time <ts>] [--end-time <ts>]` | READ | Affiliate list |
+| 16 | `dcli account trade-stats-daily --uid <uid> --appid <id> [--instrument-ids <ids>] [--start-time <ts>] [--end-time <ts>]` | READ | Daily trade statistics |
+| 17 | `dcli account trade-stats-total --uid <uid> --appid <id> [--start-time <ts>] [--end-time <ts>]` | READ | Total trade statistics |
 
 ### Write Commands
 
@@ -150,10 +153,10 @@ Confirm with the user before every write command.
 
 | # | Command | Type | Description |
 |---|---|---|---|
-| 17 | `dcli account set-leverage --inst-id <id> --lever <n> --mgn-mode <cross\|isolated> [--mrg-position <merge\|split>]` | WRITE | Set leverage |
-| 18 | `dcli account transfer --currency-id <id> --amount <amount> --from-id <id> --to-id <id> [--uid <uid>]` | WRITE | Transfer assets between account scopes |
-| 19 | `dcli account sub-account-transfer --from-uid <uid> --to-uid <uid> --from-id <id> --to-id <id> --amount <amount> --coin <ccy>` | WRITE | Transfer between sub-accounts |
-| 20 | `dcli account internal-transfer --amount <amount> --coin <ccy> --receiver-account <account> --account-type <type> [--receiver-uid <uid>]` | WRITE | Internal transfer to another Deepcoin user/account |
+| 18 | `dcli account set-leverage --inst-id <id> --lever <n> --mgn-mode <cross\|isolated> [--mrg-position <merge\|split>]` | WRITE | Set leverage |
+| 19 | `dcli account transfer --currency-id <id> --amount <amount> --from-id <id> --to-id <id> [--uid <uid>]` | WRITE | Transfer assets between account scopes |
+| 20 | `dcli account sub-account-transfer --from-uid <uid> --to-uid <uid> --from-id <id> --to-id <id> --amount <amount> --coin <ccy>` | WRITE | Transfer between sub-accounts |
+| 21 | `dcli account internal-transfer --amount <amount> --coin <ccy> --receiver-account <account> --account-type <type> [--receiver-uid <uid>]` | WRITE | Internal transfer to another Deepcoin user/account |
 
 ## Cross-Skill Workflows
 
@@ -162,7 +165,7 @@ Confirm with the user before every write command.
 > User: "I want to buy BTC. Do I have enough USDT?"
 
 ```text
-1. deepcoin-portfolio  dcli account balance --inst-type SPOT --ccy USDT --json
+1. deepcoin-portfolio  dcli account all-balances --account-type spot --ccy USDT --json
 2. deepcoin-market     dcli market ticker BTC-USDT --json
    -> user confirms trade details
 3. deepcoin-trade      dcli trade place-order ...
@@ -182,11 +185,10 @@ Confirm with the user before every write command.
 > User: "Move USDT so I can trade."
 
 ```text
-1. deepcoin-portfolio  dcli account balance --inst-type SPOT --ccy USDT --json
-2. deepcoin-portfolio  dcli account balance --inst-type SWAP --ccy USDT --json
+1. deepcoin-portfolio  dcli account all-balances --ccy USDT --json
    -> user confirms source, destination, amount, and account codes
 3. deepcoin-portfolio  dcli account transfer --currency-id <id> --amount <amount> --from-id <id> --to-id <id>
-4. deepcoin-portfolio  dcli account balance --inst-type <SPOT|SWAP> --ccy USDT --json
+4. deepcoin-portfolio  dcli account all-balances --ccy USDT --json
 ```
 
 ### Deposit / withdrawal history review
@@ -220,8 +222,10 @@ Before any authenticated command, run the [Credential Check](#credential-check).
 
 ### Step 1: Identify account action
 
-- Total holdings / "我的余额" / "all balances" -> query both `SPOT` and `SWAP` balances unless the user specified one.
-- Specific currency balance -> add `--ccy <ccy>` and use the specified account scope; if unspecified, query both `SPOT` and `SWAP`.
+- Total holdings / "我的余额" / "all balances" -> `dcli account all-balances --json`.
+- Specific currency balance with no account scope -> `dcli account all-balances --ccy <ccy> --json`.
+- Specific account type balance -> use `all-balances --account-type <type>` for account types such as `funding`, `spot`, `swapU`, `swap`, `bonus`, `rebate`, `event`, `copyTrade`, `robot`, or `all`.
+- Trading product balance for legacy spot/swap scope -> use `dcli account balance --inst-type <SPOT|SWAP>`.
 - Open positions -> `dcli account positions --inst-type SWAP`.
 - Position details for one instrument -> add `--inst-id <id>`.
 - Account activity / ledger -> `dcli account bills --inst-type <SPOT|SWAP>`.
@@ -239,10 +243,9 @@ Read commands do not need user confirmation after credentials are configured.
 Rules:
 
 - Prefer `--json` when you need to parse, compare, or combine results.
-- For "my balance" with no account scope, run both:
+- For "my balance" with no account scope, run:
   ```bash
-  dcli account balance --inst-type SPOT --json
-  dcli account balance --inst-type SWAP --json
+  dcli account all-balances --json
   ```
 - For "my positions" with no instrument, run:
   ```bash
@@ -267,13 +270,27 @@ Do not treat vague approval as confirmation for account-changing operations.
 ### Step 4: Verify after writes
 
 - After `set-leverage`: run `dcli account positions --inst-type SWAP --inst-id <id> --json`.
-- After `transfer`: run `dcli account balance --inst-type <SPOT|SWAP> --ccy <ccy> --json` for the affected scope when possible.
+- After `transfer`: run `dcli account all-balances --ccy <ccy> --json`, adding `--account-type <type>` when the affected scope is known.
 - After `sub-account-transfer`: run `dcli account sub-account-transfer-records --coin <ccy> --page 1 --size 20 --json`.
 - After `internal-transfer`: run `dcli account internal-transfer-history --coin <ccy> --page 1 --size 20 --json`.
 
 ## CLI Command Reference
 
-### Balance
+### Unified Balance
+
+```bash
+dcli account all-balances [--account-type <types>] [--ccy <ccys>] [--json]
+```
+
+| Param | Required | Default | Description |
+|---|---|---|---|
+| `--account-type` | No | - | Comma-separated account types: `funding`, `spot`, `swapU`, `swap`, `bonus`, `rebate`, `event`, `copyTrade`, `robot`, `all`. |
+| `--ccy` | No | - | Currency filter; comma-separated values are supported, such as `USDT,BTC`. |
+| `--json` | No | false | Raw machine-readable output. |
+
+Returns a unified response with update time, summary fields such as total USD equity and available balance by currency, plus per-account currency details.
+
+### Trading Product Balance
 
 ```bash
 dcli account balance [--inst-type <SPOT|SWAP>] [--ccy <ccy>] [--json]
@@ -281,7 +298,7 @@ dcli account balance [--inst-type <SPOT|SWAP>] [--ccy <ccy>] [--json]
 
 | Param | Required | Default | Description |
 |---|---|---|---|
-| `--inst-type` | No | - | Account scope: `SPOT` or `SWAP`. Use both for a full balance view. |
+| `--inst-type` | No | - | Trading product scope: `SPOT` or `SWAP`. Use `all-balances` for a full account view. |
 | `--ccy` | No | - | Currency filter such as `USDT`, `BTC`, `ETH`. |
 | `--json` | No | false | Raw machine-readable output. |
 
@@ -349,9 +366,8 @@ Use `dcli account uid` to get the current UID if the user asks for their own acc
 **"我的余额" / "How much do I have?"**
 
 ```bash
-dcli account balance --inst-type SPOT --json
-dcli account balance --inst-type SWAP --json
-# -> summarize non-zero balances by account scope
+dcli account all-balances --json
+# -> summarize totalEqUsd, totalAvailBalByCcy, and non-zero balances by account type
 ```
 
 **"我的持仓呢" / "Show my positions."**
@@ -371,7 +387,7 @@ dcli account bills --inst-type SWAP --limit 20 --json
 **"Transfer 100 USDT between account scopes."**
 
 ```bash
-dcli account balance --inst-type SPOT --ccy USDT --json
+dcli account all-balances --ccy USDT --json
 # -> user confirms exact source, destination, amount, and account codes
 dcli account transfer --currency-id <id> --amount 100 --from-id <from> --to-id <to>
 ```
@@ -382,21 +398,24 @@ Deepcoin account data is split by product/account scope.
 
 | Scope | Used for | Check with |
 |---|---|---|
-| `SPOT` | Spot balances and spot-account assets | `dcli account balance --inst-type SPOT` |
-| `SWAP` | Contract balances, margin, and open swap positions | `dcli account balance --inst-type SWAP`; `dcli account positions --inst-type SWAP` |
+| `funding` | Funding account assets | `dcli account all-balances --account-type funding` |
+| `spot` | Spot account assets | `dcli account all-balances --account-type spot`; legacy trading view: `dcli account balance --inst-type SPOT` |
+| `swapU` | USDT swap account | `dcli account all-balances --account-type swapU` |
+| `swap` | Coin-margined swap account | `dcli account all-balances --account-type swap` |
+| `bonus`, `rebate`, `event`, `copyTrade`, `robot` | Bonus, rebate, event contract, copy trading, and robot accounts | `dcli account all-balances --account-type <type>` |
 | Sub-accounts | Separate UID/account structures | `dcli account sub-accounts`; `dcli account sub-account-balance` |
 | Internal transfer recipients | Deepcoin internal receiver accounts | `dcli account internal-transfer-support`; transfer history commands |
 
 Typical flow when the user says "I have USDT but cannot trade":
 
-1. Query both `SPOT` and `SWAP` balances for `USDT`.
+1. Query `dcli account all-balances --ccy USDT --json`.
 2. If funds are in the wrong scope, prepare `dcli account transfer`.
 3. Confirm the exact transfer with the user.
 4. Re-query the target scope after transfer.
 
 ## Edge Cases
 
-- Balance without `--inst-type` may be ambiguous. For "all balances", query `SPOT` and `SWAP` separately.
+- Use `all-balances` for "all balances", "total holdings", or "我的余额"; use `balance --inst-type` only when the user specifically asks for the trading product balance.
 - Empty positions usually means no open contract positions; spot holdings are shown through balance commands.
 - `bills` requires `--inst-type`. Ask whether the user wants spot or swap history if not clear.
 - `withdraw-list` is history only. For withdrawal creation, cancellation, whitelist, chain config, or status, switch to `deepcoin-withdrawal`.
