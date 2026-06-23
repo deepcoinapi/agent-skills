@@ -112,7 +112,13 @@ git push origin main
 git push origin v<version>
 ```
 
-Install stable packages from release assets instead of `main` when reproducibility matters:
+Install the latest stable package with the GitHub `latest` release alias:
+
+```text
+https://github.com/deepcoinapi/agent-skills/releases/latest/download/deepcoin-portfolio.zip
+```
+
+Pin a package to a fixed release when reproducibility matters:
 
 ```text
 https://github.com/deepcoinapi/agent-skills/releases/download/v1.0.3/deepcoin-portfolio.zip

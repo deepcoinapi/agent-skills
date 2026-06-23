@@ -53,7 +53,7 @@ references/portfolio-commands.md
 references/dcli.md
 ```
 
-Stable zip packages are published from repository tags such as `v1.0.3`. Use tagged release assets for reproducible installation; use `main` only for active development.
+Stable zip packages are published from repository tags such as `v1.0.3`. Use `https://github.com/deepcoinapi/agent-skills/releases/latest/download/<skill>.zip` for the latest stable package, or pin a fixed tag for reproducible installation. Use `main` only for active development.
 
 ## Skill Format
 
